@@ -107,7 +107,27 @@ Response example:
 }
 ```
 
-### 5. Register the deliverable (use the path from upload response)
+### 5. Download files for verification (OPTIONAL)
+
+Before registering deliverables, you can verify files exist and read their content:
+
+```bash
+# Download via relative path (preferred)
+curl -s "http://YOUR_SERVER_IP:3000/api/files/download?relativePath={project-name}/index.html"
+
+# Download via full path
+curl -s "http://YOUR_SERVER_IP:3000/api/files/download?path=${PROJECTS_PATH}/{project-name}/index.html"
+
+# Get raw file content (no JSON wrapper)
+curl -s "http://YOUR_SERVER_IP:3000/api/files/download?relativePath={project-name}/index.html&raw=true"
+```
+
+Use this to:
+- Verify uploaded files exist before registering deliverables
+- Read file content for review tasks
+- Check file modifications
+
+### 6. Register the deliverable (use the path from upload response)
 ```bash
 curl -X POST http://YOUR_SERVER_IP:3000/api/tasks/{TASK_ID}/deliverables \
   -H "Content-Type: application/json" \
@@ -119,21 +139,21 @@ curl -X POST http://YOUR_SERVER_IP:3000/api/tasks/{TASK_ID}/deliverables \
   }'
 ```
 
-### 6. Log completion
+### 7. Log completion
 ```bash
 curl -X POST http://YOUR_SERVER_IP:3000/api/tasks/{TASK_ID}/activities \
   -H "Content-Type: application/json" \
   -d '{"activity_type": "completed", "message": "Task completed successfully"}'
 ```
 
-### 7. Mark sub-agent session complete
+### 8. Mark sub-agent session complete
 ```bash
 curl -X PATCH http://YOUR_SERVER_IP:3000/api/openclaw/sessions/{SUBAGENT_SESSION_ID} \
   -H "Content-Type: application/json" \
   -d '{"status": "completed", "ended_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}'
 ```
 
-### 8. Move task to REVIEW
+### 9. Move task to REVIEW
 ```bash
 curl -X PATCH http://YOUR_SERVER_IP:3000/api/tasks/{TASK_ID} \
   -H "Content-Type: application/json" \

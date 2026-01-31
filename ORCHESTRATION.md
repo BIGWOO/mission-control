@@ -186,6 +186,7 @@ Then refresh and watch for:
 | `/api/files/preview` | GET | Preview HTML file |
 | `/api/files/upload` | POST | Upload file from remote agent |
 | `/api/files/upload` | GET | Get upload endpoint info |
+| `/api/files/download` | GET | Download file from server |
 
 ## Activity Body Schema
 
@@ -229,6 +230,21 @@ Then refresh and watch for:
 ```
 
 The file will be saved at `${PROJECTS_PATH}/{relativePath}`
+
+## File Download Query Parameters (for remote agents)
+
+```
+GET /api/files/download?relativePath=project-name/filename.html
+GET /api/files/download?path=${PROJECTS_PATH}/project-name/filename.html
+GET /api/files/download?relativePath=project-name/filename.html&raw=true
+```
+
+Query parameters:
+- `relativePath` - Path relative to projects base (preferred)
+- `path` - Full absolute path (must be under projects base)
+- `raw` - If `true`, returns raw file content; otherwise returns JSON with metadata
+
+JSON response includes: `success`, `path`, `relativePath`, `size`, `contentType`, `content`, `encoding`, `modifiedAt`
 
 ## Completing a Sub-Agent Session
 
