@@ -290,7 +290,7 @@ export function ChatPanel() {
               onChange={(e) => setSelectedSender(e.target.value)}
               className="w-full bg-mc-bg border border-mc-border rounded px-3 py-1.5 text-sm focus:outline-none focus:border-mc-accent"
             >
-              <option value="">Select who's speaking...</option>
+              <option value="">Select who&apos;s speaking...</option>
               {agents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.avatar_emoji} {agent.name}

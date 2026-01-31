@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { queryOne, run } from '@/lib/db';
 import { getOpenClawClient } from '@/lib/openclaw/client';
+import { broadcast } from '@/lib/events';
 import type { Task, Agent, OpenClawSession } from '@/lib/types';
 
 interface RouteParams {
@@ -135,6 +136,15 @@ If you need help or clarification, ask me (Charlie).`;
         'UPDATE tasks SET status = ?, updated_at = ? WHERE id = ?',
         ['in_progress', now, id]
       );
+
+      // Broadcast task update
+      const updatedTask = queryOne<Task>('SELECT * FROM tasks WHERE id = ?', [id]);
+      if (updatedTask) {
+        broadcast({
+          type: 'task_updated',
+          payload: updatedTask,
+        });
+      }
 
       // Update agent status to working
       run(

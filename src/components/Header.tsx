@@ -8,14 +8,37 @@ import { format } from 'date-fns';
 export function Header() {
   const { agents, tasks, isOnline, selectedBusiness, setSelectedBusiness } = useMissionControl();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [activeSubAgents, setActiveSubAgents] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  const activeAgents = agents.filter((a) => a.status === 'working').length;
-  const tasksInQueue = tasks.filter((t) => t.status !== 'done').length;
+  // Load active sub-agent count
+  useEffect(() => {
+    const loadSubAgentCount = async () => {
+      try {
+        const res = await fetch('/api/openclaw/sessions?session_type=subagent&status=active');
+        if (res.ok) {
+          const sessions = await res.json();
+          setActiveSubAgents(sessions.length);
+        }
+      } catch (error) {
+        console.error('Failed to load sub-agent count:', error);
+      }
+    };
+
+    loadSubAgentCount();
+
+    // Poll every 10 seconds
+    const interval = setInterval(loadSubAgentCount, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const workingAgents = agents.filter((a) => a.status === 'working').length;
+  const activeAgents = workingAgents + activeSubAgents;
+  const tasksInQueue = tasks.filter((t) => t.status !== 'done' && t.status !== 'review').length;
 
   return (
     <header className="h-14 bg-mc-bg-secondary border-b border-mc-border flex items-center justify-between px-4">

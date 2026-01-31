@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
-import { queryOne, run } from '@/lib/db';
+import { queryOne, run, queryAll } from '@/lib/db';
 import { broadcast } from '@/lib/events';
-import type { Task, UpdateTaskRequest, Agent } from '@/lib/types';
+import type { Task, UpdateTaskRequest, Agent, TaskDeliverable } from '@/lib/types';
 
 // GET /api/tasks/[id] - Get a single task
 export async function GET(
@@ -68,6 +68,19 @@ export async function PATCH(
         return NextResponse.json(
           { error: 'Forbidden: only master agent (Charlie) can approve tasks' },
           { status: 403 }
+        );
+      }
+
+      // Verify task has deliverables before approving
+      const deliverables = queryAll<TaskDeliverable>(
+        'SELECT * FROM task_deliverables WHERE task_id = ?',
+        [id]
+      );
+
+      if (deliverables.length === 0) {
+        return NextResponse.json(
+          { error: 'Cannot approve task: no deliverables found. Task must have at least one deliverable to be marked as done.' },
+          { status: 400 }
         );
       }
     }
