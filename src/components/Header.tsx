@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Zap, Settings, ChevronLeft, LayoutGrid } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
 import { format } from 'date-fns';
+import { useTranslation } from '@/i18n';
 import type { Workspace } from '@/lib/types';
 
 interface HeaderProps {
@@ -17,6 +18,7 @@ export function Header({ workspace }: HeaderProps) {
   const { agents, tasks, isOnline } = useMissionControl();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeSubAgents, setActiveSubAgents] = useState(0);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -55,7 +57,7 @@ export function Header({ workspace }: HeaderProps) {
         <div className="flex items-center gap-2">
           <Zap className="w-5 h-5 text-mc-accent-cyan" />
           <span className="font-semibold text-mc-text uppercase tracking-wider text-sm">
-            Mission Control
+            {t('header.title')}
           </span>
         </div>
 
@@ -81,7 +83,7 @@ export function Header({ workspace }: HeaderProps) {
             className="flex items-center gap-2 px-3 py-1 bg-mc-bg-tertiary rounded hover:bg-mc-bg transition-colors"
           >
             <LayoutGrid className="w-4 h-4" />
-            <span className="text-sm">All Workspaces</span>
+            <span className="text-sm">{t('header.allWorkspaces')}</span>
           </Link>
         )}
       </div>
@@ -91,11 +93,11 @@ export function Header({ workspace }: HeaderProps) {
         <div className="flex items-center gap-8">
           <div className="text-center">
             <div className="text-2xl font-bold text-mc-accent-cyan">{activeAgents}</div>
-            <div className="text-xs text-mc-text-secondary uppercase">Agents Active</div>
+            <div className="text-xs text-mc-text-secondary uppercase">{t('header.agentsActive')}</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-mc-accent-purple">{tasksInQueue}</div>
-            <div className="text-xs text-mc-text-secondary uppercase">Tasks in Queue</div>
+            <div className="text-xs text-mc-text-secondary uppercase">{t('header.tasksInQueue')}</div>
           </div>
         </div>
       )}
@@ -117,12 +119,12 @@ export function Header({ workspace }: HeaderProps) {
               isOnline ? 'bg-mc-accent-green animate-pulse' : 'bg-mc-accent-red'
             }`}
           />
-          {isOnline ? 'ONLINE' : 'OFFLINE'}
+          {isOnline ? t('header.online') : t('header.offline')}
         </div>
         <button
           onClick={() => router.push('/settings')}
           className="p-2 hover:bg-mc-bg-tertiary rounded text-mc-text-secondary"
-          title="Settings"
+          title={t('header.settings')}
         >
           <Settings className="w-5 h-5" />
         </button>

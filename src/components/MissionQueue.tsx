@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Plus, ChevronRight, GripVertical } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
+import { useTranslation } from '@/i18n';
 import type { Task, TaskStatus } from '@/lib/types';
 import { TaskModal } from './TaskModal';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,14 +12,14 @@ interface MissionQueueProps {
   workspaceId?: string;
 }
 
-const COLUMNS: { id: TaskStatus; label: string; color: string }[] = [
-  { id: 'planning', label: '📋 PLANNING', color: 'border-t-mc-accent-purple' },
-  { id: 'inbox', label: 'INBOX', color: 'border-t-mc-accent-pink' },
-  { id: 'assigned', label: 'ASSIGNED', color: 'border-t-mc-accent-yellow' },
-  { id: 'in_progress', label: 'IN PROGRESS', color: 'border-t-mc-accent' },
-  { id: 'testing', label: 'TESTING', color: 'border-t-mc-accent-cyan' },
-  { id: 'review', label: 'REVIEW', color: 'border-t-mc-accent-purple' },
-  { id: 'done', label: 'DONE', color: 'border-t-mc-accent-green' },
+const COLUMN_KEYS: { id: TaskStatus; labelKey: string; color: string }[] = [
+  { id: 'planning', labelKey: 'queue.col.planning', color: 'border-t-mc-accent-purple' },
+  { id: 'inbox', labelKey: 'queue.col.inbox', color: 'border-t-mc-accent-pink' },
+  { id: 'assigned', labelKey: 'queue.col.assigned', color: 'border-t-mc-accent-yellow' },
+  { id: 'in_progress', labelKey: 'queue.col.inProgress', color: 'border-t-mc-accent' },
+  { id: 'testing', labelKey: 'queue.col.testing', color: 'border-t-mc-accent-cyan' },
+  { id: 'review', labelKey: 'queue.col.review', color: 'border-t-mc-accent-purple' },
+  { id: 'done', labelKey: 'queue.col.done', color: 'border-t-mc-accent-green' },
 ];
 
 export function MissionQueue({ workspaceId }: MissionQueueProps) {
@@ -26,6 +27,7 @@ export function MissionQueue({ workspaceId }: MissionQueueProps) {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+  const { t } = useTranslation();
 
   const getTasksByStatus = (status: TaskStatus) =>
     tasks.filter((task) => task.status === status);
@@ -83,20 +85,20 @@ export function MissionQueue({ workspaceId }: MissionQueueProps) {
       <div className="p-3 border-b border-mc-border flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-          <span className="text-sm font-medium uppercase tracking-wider">Mission Queue</span>
+          <span className="text-sm font-medium uppercase tracking-wider">{t('queue.title')}</span>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
           className="flex items-center gap-2 px-3 py-1.5 bg-mc-accent-pink text-mc-bg rounded text-sm font-medium hover:bg-mc-accent-pink/90"
         >
           <Plus className="w-4 h-4" />
-          New Task
+          {t('queue.newTask')}
         </button>
       </div>
 
       {/* Kanban Columns */}
       <div className="flex-1 flex gap-3 p-3 overflow-x-auto">
-        {COLUMNS.map((column) => {
+        {COLUMN_KEYS.map((column) => {
           const columnTasks = getTasksByStatus(column.id);
           return (
             <div
@@ -108,7 +110,7 @@ export function MissionQueue({ workspaceId }: MissionQueueProps) {
               {/* Column Header */}
               <div className="p-2 border-b border-mc-border flex items-center justify-between">
                 <span className="text-xs font-medium uppercase text-mc-text-secondary">
-                  {column.label}
+                  {t(column.labelKey)}
                 </span>
                 <span className="text-xs bg-mc-bg-tertiary px-2 py-0.5 rounded text-mc-text-secondary">
                   {columnTasks.length}
@@ -151,6 +153,8 @@ interface TaskCardProps {
 }
 
 function TaskCard({ task, onDragStart, onClick, isDragging }: TaskCardProps) {
+  const { t } = useTranslation();
+
   const priorityStyles = {
     low: 'text-mc-text-secondary',
     normal: 'text-mc-accent',
@@ -192,7 +196,7 @@ function TaskCard({ task, onDragStart, onClick, isDragging }: TaskCardProps) {
         {isPlanning && (
           <div className="flex items-center gap-2 mb-3 py-2 px-3 bg-purple-500/10 rounded-md border border-purple-500/20">
             <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse flex-shrink-0" />
-            <span className="text-xs text-purple-400 font-medium">Continue planning</span>
+            <span className="text-xs text-purple-400 font-medium">{t('queue.continuePlanning')}</span>
           </div>
         )}
 

@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, ArrowRight, Folder, Users, CheckSquare, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslation } from '@/i18n';
 import type { WorkspaceStats } from '@/lib/types';
 
 export function WorkspaceDashboard() {
   const [workspaces, setWorkspaces] = useState<WorkspaceStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     loadWorkspaces();
@@ -33,7 +35,7 @@ export function WorkspaceDashboard() {
       <div className="min-h-screen bg-mc-bg flex items-center justify-center">
         <div className="text-center">
           <div className="text-4xl mb-4 animate-pulse">🦞</div>
-          <p className="text-mc-text-secondary">Loading workspaces...</p>
+          <p className="text-mc-text-secondary">{t('dashboard.loading')}</p>
         </div>
       </div>
     );
@@ -47,14 +49,14 @@ export function WorkspaceDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🦞</span>
-              <h1 className="text-xl font-bold">Mission Control</h1>
+              <h1 className="text-xl font-bold">{t('header.title')}</h1>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center gap-2 px-4 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium hover:bg-mc-accent/90"
             >
               <Plus className="w-4 h-4" />
-              New Workspace
+              {t('dashboard.newWorkspace')}
             </button>
           </div>
         </div>
@@ -63,24 +65,24 @@ export function WorkspaceDashboard() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-2">All Workspaces</h2>
+          <h2 className="text-2xl font-bold mb-2">{t('dashboard.allWorkspaces')}</h2>
           <p className="text-mc-text-secondary">
-            Select a workspace to view its mission queue and agents
+            {t('dashboard.allWorkspacesDesc')}
           </p>
         </div>
 
         {workspaces.length === 0 ? (
           <div className="text-center py-16">
             <Folder className="w-16 h-16 mx-auto text-mc-text-secondary mb-4" />
-            <h3 className="text-lg font-medium mb-2">No workspaces yet</h3>
+            <h3 className="text-lg font-medium mb-2">{t('dashboard.noWorkspaces')}</h3>
             <p className="text-mc-text-secondary mb-6">
-              Create your first workspace to get started
+              {t('dashboard.noWorkspacesDesc')}
             </p>
             <button
               onClick={() => setShowCreateModal(true)}
               className="px-6 py-3 bg-mc-accent text-mc-bg rounded-lg font-medium hover:bg-mc-accent/90"
             >
-              Create Workspace
+              {t('dashboard.createWorkspace')}
             </button>
           </div>
         ) : (
@@ -101,7 +103,7 @@ export function WorkspaceDashboard() {
               <div className="w-12 h-12 rounded-full bg-mc-bg-tertiary flex items-center justify-center">
                 <Plus className="w-6 h-6 text-mc-text-secondary" />
               </div>
-              <span className="text-mc-text-secondary font-medium">Add Workspace</span>
+              <span className="text-mc-text-secondary font-medium">{t('dashboard.addWorkspace')}</span>
             </button>
           </div>
         )}
@@ -124,6 +126,7 @@ export function WorkspaceDashboard() {
 function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onDelete: (id: string) => void }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { t } = useTranslation();
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -135,10 +138,10 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
         onDelete(workspace.id);
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to delete workspace');
+        alert(data.error || t('dashboard.failedDelete'));
       }
     } catch {
-      alert('Failed to delete workspace');
+      alert(t('dashboard.failedDelete'));
     } finally {
       setDeleting(false);
       setShowDeleteConfirm(false);
@@ -168,7 +171,7 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
                   setShowDeleteConfirm(true);
                 }}
                 className="p-1.5 rounded hover:bg-mc-accent-red/20 text-mc-text-secondary hover:text-mc-accent-red transition-colors opacity-0 group-hover:opacity-100"
-                title="Delete workspace"
+                title={t('dashboard.deleteWorkspace')}
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -181,11 +184,11 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
         <div className="flex items-center gap-4 text-sm text-mc-text-secondary mt-4">
           <div className="flex items-center gap-1">
             <CheckSquare className="w-4 h-4" />
-            <span>{workspace.taskCounts.total} tasks</span>
+            <span>{workspace.taskCounts.total} {t('common.tasks')}</span>
           </div>
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            <span>{workspace.agentCount} agents</span>
+            <span>{workspace.agentCount} {t('common.agents')}</span>
           </div>
         </div>
       </div>
@@ -200,16 +203,16 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
               <AlertTriangle className="w-6 h-6 text-mc-accent-red" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Delete Workspace</h3>
-              <p className="text-sm text-mc-text-secondary">This action cannot be undone</p>
+              <h3 className="font-semibold text-lg">{t('dashboard.deleteWorkspace')}</h3>
+              <p className="text-sm text-mc-text-secondary">{t('dashboard.deleteCannotUndo')}</p>
             </div>
           </div>
           
           <p className="text-mc-text-secondary mb-6">
-            Are you sure you want to delete <strong>{workspace.name}</strong>? 
+            {t('dashboard.deleteConfirm')} <strong>{workspace.name}</strong>? 
             {workspace.taskCounts.total > 0 && (
               <span className="block mt-2 text-mc-accent-red">
-                ⚠️ This workspace has {workspace.taskCounts.total} task(s). Delete them first.
+                {t('dashboard.deleteHasTasks', { count: workspace.taskCounts.total })}
               </span>
             )}
           </p>
@@ -219,14 +222,14 @@ function WorkspaceCard({ workspace, onDelete }: { workspace: WorkspaceStats; onD
               onClick={() => setShowDeleteConfirm(false)}
               className="px-4 py-2 text-mc-text-secondary hover:text-mc-text"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleDelete}
               disabled={deleting || workspace.taskCounts.total > 0 || workspace.agentCount > 0}
               className="px-4 py-2 bg-mc-accent-red text-white rounded-lg font-medium hover:bg-mc-accent-red/90 disabled:opacity-50"
             >
-              {deleting ? 'Deleting...' : 'Delete Workspace'}
+              {deleting ? t('common.deleting') : t('dashboard.deleteWorkspace')}
             </button>
           </div>
         </div>
@@ -241,6 +244,7 @@ function CreateWorkspaceModal({ onClose, onCreated }: { onClose: () => void; onC
   const [icon, setIcon] = useState('📁');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const icons = ['📁', '💼', '🏢', '🚀', '💡', '🎯', '📊', '🔧', '🌟', '🏠'];
 
@@ -262,10 +266,10 @@ function CreateWorkspaceModal({ onClose, onCreated }: { onClose: () => void; onC
         onCreated();
       } else {
         const data = await res.json();
-        setError(data.error || 'Failed to create workspace');
+        setError(data.error || t('dashboard.failedDelete'));
       }
     } catch {
-      setError('Failed to create workspace');
+      setError(t('dashboard.failedDelete'));
     } finally {
       setIsSubmitting(false);
     }
@@ -275,13 +279,13 @@ function CreateWorkspaceModal({ onClose, onCreated }: { onClose: () => void; onC
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-mc-bg-secondary border border-mc-border rounded-xl w-full max-w-md">
         <div className="p-6 border-b border-mc-border">
-          <h2 className="text-lg font-semibold">Create New Workspace</h2>
+          <h2 className="text-lg font-semibold">{t('dashboard.createNewWorkspace')}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Icon selector */}
           <div>
-            <label className="block text-sm font-medium mb-2">Icon</label>
+            <label className="block text-sm font-medium mb-2">{t('common.icon')}</label>
             <div className="flex flex-wrap gap-2">
               {icons.map((i) => (
                 <button
@@ -302,12 +306,12 @@ function CreateWorkspaceModal({ onClose, onCreated }: { onClose: () => void; onC
 
           {/* Name input */}
           <div>
-            <label className="block text-sm font-medium mb-2">Name</label>
+            <label className="block text-sm font-medium mb-2">{t('common.name')}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Acme Corp"
+              placeholder={t('dashboard.namePlaceholder')}
               className="w-full bg-mc-bg border border-mc-border rounded-lg px-4 py-2 focus:outline-none focus:border-mc-accent"
               autoFocus
             />
@@ -323,14 +327,14 @@ function CreateWorkspaceModal({ onClose, onCreated }: { onClose: () => void; onC
               onClick={onClose}
               className="px-4 py-2 text-mc-text-secondary hover:text-mc-text"
             >
-              Cancel
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
               disabled={!name.trim() || isSubmitting}
               className="px-6 py-2 bg-mc-accent text-mc-bg rounded-lg font-medium hover:bg-mc-accent/90 disabled:opacity-50"
             >
-              {isSubmitting ? 'Creating...' : 'Create Workspace'}
+              {isSubmitting ? t('common.creating') : t('dashboard.createWorkspace')}
             </button>
           </div>
         </form>

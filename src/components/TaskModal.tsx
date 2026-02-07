@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Save, Trash2, Activity, Package, Bot, ClipboardList, Plus } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
+import { useTranslation } from '@/i18n';
 import { ActivityLog } from './ActivityLog';
 import { DeliverablesList } from './DeliverablesList';
 import { SessionsList } from './SessionsList';
@@ -23,8 +24,8 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [usePlanningMode, setUsePlanningMode] = useState(false);
-  // Auto-switch to planning tab if task is in planning status
   const [activeTab, setActiveTab] = useState<TabType>(task?.status === 'planning' ? 'planning' : 'overview');
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     title: task?.title || '',
@@ -45,7 +46,6 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
 
       const payload = {
         ...form,
-        // If planning mode is enabled for new tasks, override status to 'planning'
         status: (!task && usePlanningMode) ? 'planning' : form.status,
         assigned_agent_id: form.assigned_agent_id || null,
         due_date: form.due_date || null,
@@ -74,17 +74,13 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
             created_at: new Date().toISOString(),
           });
 
-          // If planning mode is enabled, auto-generate questions and keep modal open
           if (usePlanningMode) {
-            // Trigger question generation in background
             fetch(`/api/tasks/${savedTask.id}/planning`, { method: 'POST' })
               .then(() => {
-                // Update our local task reference and switch to planning tab
                 updateTask({ ...savedTask, status: 'planning' });
               })
               .catch(console.error);
             
-            // Log the planning start
             addEvent({
               id: crypto.randomUUID(),
               type: 'task_status_changed',
@@ -104,7 +100,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
   };
 
   const handleDelete = async () => {
-    if (!task || !confirm(`Delete "${task.title}"?`)) return;
+    if (!task || !confirm(t('task.deleteConfirm', { title: task.title }))) return;
 
     try {
       const res = await fetch(`/api/tasks/${task.id}`, { method: 'DELETE' });
@@ -123,11 +119,11 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
   const priorities: TaskPriority[] = ['low', 'normal', 'high', 'urgent'];
 
   const tabs = [
-    { id: 'overview' as TabType, label: 'Overview', icon: null },
-    { id: 'planning' as TabType, label: 'Planning', icon: <ClipboardList className="w-4 h-4" /> },
-    { id: 'activity' as TabType, label: 'Activity', icon: <Activity className="w-4 h-4" /> },
-    { id: 'deliverables' as TabType, label: 'Deliverables', icon: <Package className="w-4 h-4" /> },
-    { id: 'sessions' as TabType, label: 'Sessions', icon: <Bot className="w-4 h-4" /> },
+    { id: 'overview' as TabType, label: t('task.tab.overview'), icon: null },
+    { id: 'planning' as TabType, label: t('task.tab.planning'), icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'activity' as TabType, label: t('task.tab.activity'), icon: <Activity className="w-4 h-4" /> },
+    { id: 'deliverables' as TabType, label: t('task.tab.deliverables'), icon: <Package className="w-4 h-4" /> },
+    { id: 'sessions' as TabType, label: t('task.tab.sessions'), icon: <Bot className="w-4 h-4" /> },
   ];
 
   return (
@@ -136,7 +132,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-mc-border flex-shrink-0">
           <h2 className="text-lg font-semibold">
-            {task ? task.title : 'Create New Task'}
+            {task ? task.title : t('task.createNew')}
           </h2>
           <button
             onClick={onClose}
@@ -173,26 +169,26 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium mb-1">Title</label>
+            <label className="block text-sm font-medium mb-1">{t('task.title')}</label>
             <input
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               required
               className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent"
-              placeholder="What needs to be done?"
+              placeholder={t('task.titlePlaceholder')}
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium mb-1">Description</label>
+            <label className="block text-sm font-medium mb-1">{t('task.description')}</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
               className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent resize-none"
-              placeholder="Add details..."
+              placeholder={t('task.descPlaceholder')}
             />
           </div>
 
@@ -209,12 +205,10 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
                 <div>
                   <span className="font-medium text-sm flex items-center gap-2">
                     <ClipboardList className="w-4 h-4 text-mc-accent" />
-                    Enable Planning Mode
+                    {t('task.planningMode')}
                   </span>
                   <p className="text-xs text-mc-text-secondary mt-1">
-                    Best for complex projects that need detailed requirements. 
-                    You&apos;ll answer a few questions to define scope, goals, and constraints 
-                    before work begins. Skip this for quick, straightforward tasks.
+                    {t('task.planningModeDesc')}
                   </p>
                 </div>
               </label>
@@ -224,7 +218,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
           <div className="grid grid-cols-2 gap-4">
             {/* Status */}
             <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
+              <label className="block text-sm font-medium mb-1">{t('common.status')}</label>
               <select
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value as TaskStatus })}
@@ -240,7 +234,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
 
             {/* Priority */}
             <div>
-              <label className="block text-sm font-medium mb-1">Priority</label>
+              <label className="block text-sm font-medium mb-1">{t('task.priority')}</label>
               <select
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: e.target.value as TaskPriority })}
@@ -257,7 +251,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
 
           {/* Assigned Agent */}
           <div>
-            <label className="block text-sm font-medium mb-1">Assign to</label>
+            <label className="block text-sm font-medium mb-1">{t('task.assignTo')}</label>
             <select
               value={form.assigned_agent_id}
               onChange={(e) => {
@@ -269,21 +263,21 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
               }}
               className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent"
             >
-              <option value="">Unassigned</option>
+              <option value="">{t('task.unassigned')}</option>
               {agents.map((agent) => (
                 <option key={agent.id} value={agent.id}>
                   {agent.avatar_emoji} {agent.name} - {agent.role}
                 </option>
               ))}
               <option value="__add_new__" className="text-mc-accent">
-                ➕ Add new agent...
+                {t('task.addNewAgent')}
               </option>
             </select>
           </div>
 
           {/* Due Date */}
           <div>
-            <label className="block text-sm font-medium mb-1">Due Date</label>
+            <label className="block text-sm font-medium mb-1">{t('task.dueDate')}</label>
             <input
               type="datetime-local"
               value={form.due_date}
@@ -299,7 +293,6 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
             <PlanningTab 
               taskId={task.id} 
               onSpecLocked={() => {
-                // Refresh task data when spec is locked
                 window.location.reload();
               }}
             />
@@ -333,7 +326,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
                     className="flex items-center gap-2 px-3 py-2 text-mc-accent-red hover:bg-mc-accent-red/10 rounded text-sm"
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete
+                    {t('common.delete')}
                   </button>
                 </>
               )}
@@ -344,7 +337,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
                 onClick={onClose}
                 className="px-4 py-2 text-sm text-mc-text-secondary hover:text-mc-text"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={handleSubmit}
@@ -352,7 +345,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
                 className="flex items-center gap-2 px-4 py-2 bg-mc-accent text-mc-bg rounded text-sm font-medium hover:bg-mc-accent/90 disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
-                {isSubmitting ? 'Saving...' : 'Save'}
+                {isSubmitting ? t('common.saving') : t('common.save')}
               </button>
             </div>
           </div>
@@ -365,7 +358,6 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
           workspaceId={workspaceId}
           onClose={() => setShowAgentModal(false)}
           onAgentCreated={(agentId) => {
-            // Auto-select the newly created agent
             setForm({ ...form, assigned_agent_id: agentId });
             setShowAgentModal(false);
           }}
