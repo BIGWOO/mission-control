@@ -87,7 +87,19 @@ export async function POST(request: NextRequest) {
     const id = uuidv4();
     const now = new Date().toISOString();
 
-    const workspaceId = (body as { workspace_id?: string }).workspace_id || 'default';
+    // Resolve workspace: explicit workspace_id > discord_channel_id lookup > 'default'
+    let workspaceId = (body as { workspace_id?: string }).workspace_id || '';
+    if (!workspaceId && (body as { discord_channel_id?: string }).discord_channel_id) {
+      const discordChannelId = (body as { discord_channel_id?: string }).discord_channel_id;
+      const mapping = queryOne<{ workspace_id: string }>(
+        'SELECT workspace_id FROM discord_channels WHERE channel_id = ? LIMIT 1',
+        [discordChannelId]
+      );
+      if (mapping) {
+        workspaceId = mapping.workspace_id;
+      }
+    }
+    if (!workspaceId) workspaceId = 'default';
     const status = (body as { status?: string }).status || 'inbox';
     
     run(
