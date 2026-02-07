@@ -239,6 +239,36 @@ export interface TaskRun {
   created_at: string;
 }
 
+// Discord channel types
+export type DiscordChannelType = 'notification' | 'command' | 'both';
+
+export interface DiscordChannel {
+  id: string;
+  workspace_id: string;
+  channel_id: string;
+  channel_name: string;
+  channel_type: DiscordChannelType;
+  webhook_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type DiscordEventType =
+  | 'task_created'
+  | 'task_status_changed'
+  | 'run_started'
+  | 'run_completed'
+  | 'run_failed'
+  | 'deliverable_added';
+
+export interface NotificationSetting {
+  id: string;
+  workspace_id: string;
+  event_type: DiscordEventType;
+  enabled: number;
+  created_at: string;
+}
+
 // API request/response types
 export interface CreateAgentRequest {
   name: string;

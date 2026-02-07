@@ -188,6 +188,40 @@ const migrations: Migration[] = [
         db.exec(`ALTER TABLE workspaces ADD COLUMN default_project_dir TEXT`);
       }
     }
+  },
+  {
+    id: '006',
+    name: 'add_discord_channels_and_notification_settings',
+    up: (db) => {
+      console.log('[Migration 006] Adding discord_channels and notification_settings tables...');
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS discord_channels (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+          channel_id TEXT NOT NULL,
+          channel_name TEXT NOT NULL,
+          channel_type TEXT NOT NULL DEFAULT 'notification' CHECK (channel_type IN ('notification', 'command', 'both')),
+          webhook_url TEXT,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now'))
+        );
+      `);
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS notification_settings (
+          id TEXT PRIMARY KEY,
+          workspace_id TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+          event_type TEXT NOT NULL,
+          enabled INTEGER DEFAULT 1,
+          created_at TEXT DEFAULT (datetime('now')),
+          UNIQUE(workspace_id, event_type)
+        );
+      `);
+
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_discord_channels_workspace ON discord_channels(workspace_id)`);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_notification_settings_workspace ON notification_settings(workspace_id)`);
+    }
   }
 ];
 
