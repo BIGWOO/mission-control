@@ -1,8 +1,17 @@
 // OpenClaw Gateway WebSocket Client
 
 import { EventEmitter } from 'events';
-import WebSocket from 'ws';
 import type { OpenClawMessage, OpenClawSessionInfo } from '../types';
+
+// Dynamic import to avoid Next.js bundling issues with ws module
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let WebSocket: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  WebSocket = require('ws');
+} catch {
+  // ws module not available - will fail gracefully on connect
+}
 
 const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789';
 const GATEWAY_TOKEN = process.env.OPENCLAW_GATEWAY_TOKEN || '';
@@ -58,23 +67,24 @@ export class OpenClawClient extends EventEmitter {
         }
         console.log('[OpenClaw] Connecting to:', wsUrl.toString().replace(/token=[^&]+/, 'token=***'));
         console.log('[OpenClaw] Token in URL:', wsUrl.searchParams.has('token'));
-        this.ws = new WebSocket(wsUrl.toString());
+        const ws = new WebSocket(wsUrl.toString());
+        this.ws = ws;
 
         const connectionTimeout = setTimeout(() => {
           if (!this.connected) {
-            this.ws?.close();
+            ws.close();
             reject(new Error('Connection timeout'));
           }
         }, 10000); // 10 second connection timeout
 
-        this.ws.onopen = async () => {
+        ws.onopen = async () => {
           clearTimeout(connectionTimeout);
           console.log('[OpenClaw] WebSocket opened, waiting for challenge...');
           // Don't send anything yet - wait for Gateway challenge
           // Token is in URL query string
         };
 
-        this.ws.onclose = (event) => {
+        ws.onclose = (event: { code: number; reason: string; wasClean: boolean }) => {
           clearTimeout(connectionTimeout);
           const wasConnected = this.connected;
           this.connected = false;
@@ -89,7 +99,7 @@ export class OpenClawClient extends EventEmitter {
           }
         };
 
-        this.ws.onerror = (error) => {
+        ws.onerror = (error: unknown) => {
           clearTimeout(connectionTimeout);
           console.error('[OpenClaw] WebSocket error');
           this.emit('error', error);
@@ -99,7 +109,7 @@ export class OpenClawClient extends EventEmitter {
           }
         };
 
-        this.ws.onmessage = (event) => {
+        ws.onmessage = (event: { data: unknown }) => {
           console.log('[OpenClaw] Received:', event.data);
           try {
             const data = JSON.parse(event.data as string);

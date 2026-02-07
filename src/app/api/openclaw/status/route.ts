@@ -1,50 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getOpenClawClient } from '@/lib/openclaw/client';
 
 // Force dynamic - don't try to connect during build
 export const dynamic = 'force-dynamic';
 
 // GET /api/openclaw/status - Check OpenClaw connection status
+// NOTE: WebSocket client temporarily disabled due to ws module bundling issue
+// TODO: Fix ws externals in next.config.mjs and re-enable
 export async function GET() {
-  try {
-    const client = getOpenClawClient();
-
-    if (!client.isConnected()) {
-      try {
-        await client.connect();
-      } catch (err) {
-        return NextResponse.json({
-          connected: false,
-          error: 'Failed to connect to OpenClaw Gateway',
-          gateway_url: process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789',
-        });
-      }
-    }
-
-    // Try to list sessions to verify connection
-    try {
-      const sessions = await client.listSessions();
-      return NextResponse.json({
-        connected: true,
-        sessions_count: sessions.length,
-        sessions: sessions,
-        gateway_url: process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789',
-      });
-    } catch (err) {
-      return NextResponse.json({
-        connected: true,
-        error: 'Connected but failed to list sessions',
-        gateway_url: process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789',
-      });
-    }
-  } catch (error) {
-    console.error('OpenClaw status check failed:', error);
-    return NextResponse.json(
-      {
-        connected: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({
+    connected: false,
+    error: 'OpenClaw WebSocket client temporarily disabled',
+    gateway_url: process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789',
+  });
 }
