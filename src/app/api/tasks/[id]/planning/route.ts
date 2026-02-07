@@ -162,6 +162,7 @@ export async function POST(
       title: string;
       description: string;
       status: string;
+      workspace_id?: string;
       planning_session_key?: string;
       planning_messages?: string;
     } | undefined;
@@ -178,11 +179,20 @@ export async function POST(
     // Create session key for this planning task
     const sessionKey = `${PLANNING_SESSION_PREFIX}${taskId}`;
 
+    // Fetch workspace info for project directory context
+    let projectDir = '';
+    if (task.workspace_id) {
+      const workspace = getDb().prepare('SELECT default_project_dir FROM workspaces WHERE id = ?').get(task.workspace_id) as { default_project_dir?: string } | undefined;
+      if (workspace?.default_project_dir) {
+        projectDir = workspace.default_project_dir;
+      }
+    }
+
     // Build the initial planning prompt
     const planningPrompt = `PLANNING REQUEST
 
 Task Title: ${task.title}
-Task Description: ${task.description || 'No description provided'}
+Task Description: ${task.description || 'No description provided'}${projectDir ? `\nProject Directory: ${projectDir}` : ''}
 
 You are starting a planning session for this task. Read PLANNING.md for your protocol.
 
