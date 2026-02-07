@@ -153,11 +153,11 @@ export async function PATCH(
       [id]
     );
 
-    // Broadcast task update via SSE
+    // Broadcast task update via SSE (include previous_status for Discord notification filtering)
     if (task) {
       broadcast({
         type: 'task_updated',
-        payload: task,
+        payload: { ...task, previous_status: existing.status } as unknown as Task,
       });
     }
 
