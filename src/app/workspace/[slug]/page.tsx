@@ -22,7 +22,6 @@ export default function WorkspacePage() {
     setAgents,
     setTasks,
     setEvents,
-    setIsOnline,
     setIsLoading,
     isLoading,
   } = useMissionControl();
@@ -88,26 +87,8 @@ export default function WorkspacePage() {
       }
     }
 
-    // Check OpenClaw connection separately (non-blocking)
-    async function checkOpenClaw() {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const openclawRes = await fetch('/api/openclaw/status', { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (openclawRes.ok) {
-          const status = await openclawRes.json();
-          setIsOnline(status.connected);
-        }
-      } catch {
-        setIsOnline(false);
-      }
-    }
-
     loadData();
-    checkOpenClaw();
+    // isOnline is managed by useSSE hook, not OpenClaw status
 
     // Poll for events every 5 seconds
     const eventPoll = setInterval(async () => {
@@ -145,25 +126,11 @@ export default function WorkspacePage() {
       }
     }, 10000);
 
-    // Check OpenClaw connection every 30 seconds
-    const connectionCheck = setInterval(async () => {
-      try {
-        const res = await fetch('/api/openclaw/status');
-        if (res.ok) {
-          const status = await res.json();
-          setIsOnline(status.connected);
-        }
-      } catch {
-        setIsOnline(false);
-      }
-    }, 30000);
-
     return () => {
       clearInterval(eventPoll);
-      clearInterval(connectionCheck);
       clearInterval(taskPoll);
     };
-  }, [workspace, setAgents, setTasks, setEvents, setIsOnline, setIsLoading]);
+  }, [workspace, setAgents, setTasks, setEvents, setIsLoading]);
 
   if (notFound) {
     return (

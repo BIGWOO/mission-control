@@ -7,6 +7,8 @@ import { NextRequest } from 'next/server';
 import { registerClient, unregisterClient } from '@/lib/events';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const maxDuration = 300; // 5 minutes max for SSE connections
 
 export async function GET(request: NextRequest) {
   const encoder = new TextEncoder();
@@ -17,17 +19,19 @@ export async function GET(request: NextRequest) {
       // Register this client
       registerClient(controller);
 
-      // Send initial connection message
-      const connectMsg = encoder.encode(`: connected\n\n`);
-      controller.enqueue(connectMsg);
+      // Send initial connection message + immediate ping
+      controller.enqueue(encoder.encode(`: connected\n\n`));
+      controller.enqueue(encoder.encode(`data: {"type":"ping"}\n\n`));
 
       // Set up keep-alive ping every 15 seconds
       const keepAliveInterval = setInterval(() => {
         try {
           controller.enqueue(encoder.encode(`data: {"type":"ping"}\n\n`));
-        } catch (error) {
-          // Client disconnected
+        } catch {
+          // Client disconnected - clean up
           clearInterval(keepAliveInterval);
+          unregisterClient(controller);
+          try { controller.close(); } catch { /* already closed */ }
         }
       }, 15000);
 

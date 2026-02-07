@@ -13,13 +13,6 @@ import type { SSEEvent, Task } from '@/lib/types';
 export function useSSE() {
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
-  const {
-    updateTask,
-    addTask,
-    setIsOnline,
-    selectedTask,
-    setSelectedTask,
-  } = useMissionControl();
 
   useEffect(() => {
     let isConnecting = false;
@@ -37,9 +30,8 @@ export function useSSE() {
 
       eventSource.onopen = () => {
         debug.sse('Connected');
-        setIsOnline(true);
+        useMissionControl.getState().setIsOnline(true);
         isConnecting = false;
-        // Clear any pending reconnect
         if (reconnectTimeoutRef.current) {
           clearTimeout(reconnectTimeoutRef.current);
         }
@@ -49,51 +41,32 @@ export function useSSE() {
         try {
           const sseEvent: SSEEvent = JSON.parse(event.data);
 
-          // Skip keep-alive ping messages
           if (sseEvent.type === 'ping') {
             return;
           }
           debug.sse(`Received event: ${sseEvent.type}`, sseEvent.payload);
 
+          const store = useMissionControl.getState();
+
           switch (sseEvent.type) {
             case 'task_created':
-              debug.sse('Adding new task to store', { id: (sseEvent.payload as Task).id });
-              addTask(sseEvent.payload as Task);
+              store.addTask(sseEvent.payload as Task);
               break;
 
-            case 'task_updated':
+            case 'task_updated': {
               const incomingTask = sseEvent.payload as Task;
-              debug.sse('Task update received', {
-                id: incomingTask.id,
-                status: incomingTask.status,
-                title: incomingTask.title
-              });
-              updateTask(incomingTask);
-
-              // Update selected task if viewing this task (for modal)
-              if (selectedTask?.id === incomingTask.id) {
-                debug.sse('Also updating selectedTask for modal');
-                setSelectedTask(incomingTask);
+              store.updateTask(incomingTask);
+              if (store.selectedTask?.id === incomingTask.id) {
+                store.setSelectedTask(incomingTask);
               }
               break;
+            }
 
             case 'activity_logged':
-              debug.sse('Activity logged', sseEvent.payload);
-              // Activities are fetched when task detail is opened
-              break;
-
             case 'deliverable_added':
-              debug.sse('Deliverable added', sseEvent.payload);
-              // Deliverables are fetched when task detail is opened
-              break;
-
             case 'agent_spawned':
-              debug.sse('Agent spawned', sseEvent.payload);
-              // Will trigger re-fetch of sub-agent count
-              break;
-
             case 'agent_completed':
-              debug.sse('Agent completed', sseEvent.payload);
+              debug.sse(sseEvent.type, sseEvent.payload);
               break;
 
             default:
@@ -104,16 +77,14 @@ export function useSSE() {
         }
       };
 
-      eventSource.onerror = (error) => {
-        debug.sse('Connection error', error);
-        setIsOnline(false);
+      eventSource.onerror = () => {
+        debug.sse('Connection error');
+        useMissionControl.getState().setIsOnline(false);
         isConnecting = false;
 
-        // Close the connection
         eventSource.close();
         eventSourceRef.current = null;
 
-        // Attempt reconnection after 5 seconds
         reconnectTimeoutRef.current = setTimeout(() => {
           debug.sse('Attempting to reconnect...');
           connect();
@@ -121,10 +92,8 @@ export function useSSE() {
       };
     };
 
-    // Initial connection
     connect();
 
-    // Cleanup on unmount
     return () => {
       if (eventSourceRef.current) {
         debug.sse('Disconnecting...');
@@ -135,5 +104,5 @@ export function useSSE() {
         clearTimeout(reconnectTimeoutRef.current);
       }
     };
-  }, [addTask, updateTask, setIsOnline, selectedTask, setSelectedTask]);
+  }, []);
 }
