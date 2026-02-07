@@ -329,8 +329,12 @@ export class OpenClawClient extends EventEmitter {
                   // Stale response from before our request - ignore
                   return;
                 }
-                const text = last.content?.find(c => c.type === 'text')?.text;
-                settle(text || null);
+                // Collect ALL text blocks (thinking mode produces multiple: empty prefix + real content)
+                const allText = last.content
+                  ?.filter((c: { type: string; text?: string }) => c.type === 'text' && c.text?.trim())
+                  .map((c: { type: string; text?: string }) => c.text)
+                  .join('\n') || null;
+                settle(allText);
               } else {
                 settle(null);
               }
@@ -362,8 +366,12 @@ export class OpenClawClient extends EventEmitter {
               settle(null);
               return;
             }
-            const text = last.content?.find(c => c.type === 'text')?.text;
-            settle(text || null);
+            // Collect ALL text blocks (thinking mode produces multiple: empty prefix + real content)
+            const allText = last.content
+              ?.filter((c: { type: string; text?: string }) => c.type === 'text' && c.text?.trim())
+              .map((c: { type: string; text?: string }) => c.text)
+              .join('\n') || null;
+            settle(allText);
             return;
           }
         } catch {
