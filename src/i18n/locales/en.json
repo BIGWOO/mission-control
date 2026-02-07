@@ -13,7 +13,6 @@
   "common.tasks": "tasks",
   "common.agents": "agents",
   "common.all": "all",
-
   "header.title": "Mission Control",
   "header.allWorkspaces": "All Workspaces",
   "header.agentsActive": "Agents Active",
@@ -21,7 +20,6 @@
   "header.online": "ONLINE",
   "header.offline": "OFFLINE",
   "header.settings": "Settings",
-
   "dashboard.loading": "Loading workspaces...",
   "dashboard.newWorkspace": "New Workspace",
   "dashboard.allWorkspaces": "All Workspaces",
@@ -37,7 +35,6 @@
   "dashboard.createNewWorkspace": "Create New Workspace",
   "dashboard.namePlaceholder": "e.g., Acme Corp",
   "dashboard.failedDelete": "Failed to delete workspace",
-
   "queue.title": "Mission Queue",
   "queue.newTask": "New Task",
   "queue.col.planning": "📋 PLANNING",
@@ -48,7 +45,6 @@
   "queue.col.review": "REVIEW",
   "queue.col.done": "DONE",
   "queue.continuePlanning": "Continue planning",
-
   "task.createNew": "Create New Task",
   "task.tab.overview": "Overview",
   "task.tab.planning": "Planning",
@@ -67,7 +63,6 @@
   "task.planningMode": "Enable Planning Mode",
   "task.planningModeDesc": "Best for complex projects that need detailed requirements. You'll answer a few questions to define scope, goals, and constraints before work begins. Skip this for quick, straightforward tasks.",
   "task.deleteConfirm": "Delete \"{title}\"?",
-
   "planning.loading": "Loading planning state...",
   "planning.complete": "Planning Complete",
   "planning.deliverables": "Deliverables:",
@@ -85,7 +80,6 @@
   "planning.you": "You",
   "planning.charlie": "Charlie",
   "planning.pleaseSpecify": "Please specify...",
-
   "agent.createNew": "Create New Agent",
   "agent.edit": "Edit {name}",
   "agent.tab.info": "Info",
@@ -110,7 +104,6 @@
   "agent.agentsLabel": "AGENTS.md - Team Awareness",
   "agent.agentsPlaceholder": "# Team Roster\n\nInformation about other agents this agent works with...",
   "agent.deleteConfirm": "Delete {name}?",
-
   "sidebar.agents": "Agents",
   "sidebar.activeSubAgents": "Active Sub-Agents:",
   "sidebar.working": "working",
@@ -119,13 +112,11 @@
   "sidebar.connecting": "Connecting...",
   "sidebar.openclawConnected": "OpenClaw Connected",
   "sidebar.connectOpenclaw": "Connect to OpenClaw",
-
   "activity.loading": "Loading activities...",
   "activity.noActivity": "No activity yet",
   "activity.justNow": "just now",
   "activity.minsAgo": "{count} min(s) ago",
   "activity.hoursAgo": "{count} hour(s) ago",
-
   "deliverables.loading": "Loading deliverables...",
   "deliverables.noDeliverables": "No deliverables yet",
   "deliverables.previewInBrowser": "Preview in browser",
@@ -135,7 +126,6 @@
   "deliverables.pathForbidden": "Cannot open this location:\n{path}\n\nPath is outside allowed directories.",
   "deliverables.copiedToClipboard": "Could not open Finder. Path copied to clipboard:\n{path}",
   "deliverables.filePath": "File path:\n{path}",
-
   "sessions.loading": "Loading sessions...",
   "sessions.noSessions": "No sub-agent sessions yet",
   "sessions.subAgent": "Sub-Agent",
@@ -146,18 +136,15 @@
   "sessions.markComplete": "Mark as complete",
   "sessions.deleteSession": "Delete session",
   "sessions.deleteConfirm": "Delete this sub-agent session?",
-
   "feed.title": "Live Feed",
   "feed.all": "all",
   "feed.tasks": "tasks",
   "feed.agents": "agents",
   "feed.noEvents": "No events yet",
-
   "debug.title": "Debug",
   "debug.events": "Debug Events",
   "debug.clear": "Clear",
   "debug.waiting": "Waiting for events...",
-
   "settings.title": "Settings",
   "settings.resetToDefaults": "Reset to Defaults",
   "settings.saveChanges": "Save Changes",
@@ -182,9 +169,7 @@
   "settings.languageDesc": "Choose the display language for Mission Control.",
   "settings.langEn": "English",
   "settings.langZhTW": "繁體中文",
-
   "task.tab.runner": "Runner",
-
   "runner.cliType": "CLI Type",
   "runner.projectDir": "Project Directory",
   "runner.prompt": "Prompt",
@@ -194,7 +179,6 @@
   "runner.cancel": "Cancel",
   "runner.waitingOutput": "Waiting for output...",
   "runner.history": "Run History",
-
   "discord.title": "Discord Integration",
   "discord.channelId": "Channel ID",
   "discord.channelName": "Channel Name",
@@ -243,9 +227,46 @@
   "adding": "Adding...",
   "cancel": "Cancel",
   "remove": "Remove",
-
   "workspace.notFound": "Workspace Not Found",
   "workspace.notFoundDesc": "The workspace \"{slug}\" doesn't exist.",
   "workspace.backToDashboard": "Back to Dashboard",
-  "workspace.loadingSlug": "Loading {slug}..."
+  "workspace.loadingSlug": "Loading {slug}...",
+  "discord.notificationLanguage": "Notification Language",
+  "discord.notificationLanguageDesc": "Choose the language for Discord notification embeds.",
+  "embed.title.task_created": "📋 Task Created",
+  "embed.title.task_status_changed": "🔄 Task Status Changed",
+  "embed.title.run_started": "▶️ Run Started",
+  "embed.title.run_completed": "✅ Run Completed",
+  "embed.title.run_failed": "❌ Run Failed",
+  "embed.title.deliverable_added": "📦 Deliverable Added",
+  "embed.field.description": "Description",
+  "embed.field.priority": "Priority",
+  "embed.field.status": "Status",
+  "embed.field.taskId": "Task ID",
+  "embed.field.cli": "CLI",
+  "embed.field.error": "Error",
+  "embed.field.type": "Type",
+  "embed.field.path": "Path",
+  "embed.desc.task_created": "New task created",
+  "embed.desc.task_status_changed": "Task status updated",
+  "embed.desc.run_started": "Run started for task",
+  "embed.desc.run_completed": "Run completed successfully",
+  "embed.desc.run_failed": "Run failed",
+  "embed.desc.deliverable_added": "New deliverable added",
+  "embed.priority.low": "Low",
+  "embed.priority.normal": "Normal",
+  "embed.priority.high": "High",
+  "embed.priority.urgent": "Urgent",
+  "embed.status.inbox": "Inbox",
+  "embed.status.planning": "Planning",
+  "embed.status.assigned": "Assigned",
+  "embed.status.in_progress": "In Progress",
+  "embed.status.testing": "Testing",
+  "embed.status.review": "Review",
+  "embed.status.done": "Done",
+  "embed.test.title": "🧪 Test Notification",
+  "embed.test.description": "This is a test notification from Mission Control",
+  "embed.test.workspaceId": "Workspace ID",
+  "embed.test.status": "Status",
+  "embed.test.statusValue": "Test successful"
 }

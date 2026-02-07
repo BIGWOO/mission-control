@@ -13,7 +13,6 @@
   "common.tasks": "任務",
   "common.agents": "代理",
   "common.all": "全部",
-
   "header.title": "Mission Control",
   "header.allWorkspaces": "所有工作區",
   "header.agentsActive": "執行中代理",
@@ -21,7 +20,6 @@
   "header.online": "已連線",
   "header.offline": "已離線",
   "header.settings": "設定",
-
   "dashboard.loading": "載入工作區中...",
   "dashboard.newWorkspace": "新增工作區",
   "dashboard.allWorkspaces": "所有工作區",
@@ -37,7 +35,6 @@
   "dashboard.createNewWorkspace": "建立新工作區",
   "dashboard.namePlaceholder": "例如：Acme Corp",
   "dashboard.failedDelete": "刪除工作區失敗",
-
   "queue.title": "任務佇列",
   "queue.newTask": "新增任務",
   "queue.col.planning": "📋 規劃中",
@@ -48,7 +45,6 @@
   "queue.col.review": "審核中",
   "queue.col.done": "已完成",
   "queue.continuePlanning": "繼續規劃",
-
   "task.createNew": "建立新任務",
   "task.tab.overview": "概覽",
   "task.tab.planning": "規劃",
@@ -67,7 +63,6 @@
   "task.planningMode": "啟用規劃模式",
   "task.planningModeDesc": "適合需要詳細需求的複雜專案。你將回答幾個問題來定義範圍、目標與限制條件，再開始執行。簡單任務可跳過此步驟。",
   "task.deleteConfirm": "確定刪除「{title}」？",
-
   "planning.loading": "載入規劃狀態中...",
   "planning.complete": "規劃完成",
   "planning.deliverables": "交付物：",
@@ -85,7 +80,6 @@
   "planning.you": "你",
   "planning.charlie": "Charlie",
   "planning.pleaseSpecify": "請說明...",
-
   "agent.createNew": "建立新代理",
   "agent.edit": "編輯 {name}",
   "agent.tab.info": "基本資訊",
@@ -110,7 +104,6 @@
   "agent.agentsLabel": "AGENTS.md — 團隊成員",
   "agent.agentsPlaceholder": "# 團隊名冊\n\n關於此代理合作對象的相關資訊...",
   "agent.deleteConfirm": "確定刪除 {name}？",
-
   "sidebar.agents": "代理",
   "sidebar.activeSubAgents": "執行中子代理：",
   "sidebar.working": "工作中",
@@ -119,13 +112,11 @@
   "sidebar.connecting": "連線中...",
   "sidebar.openclawConnected": "OpenClaw 已連線",
   "sidebar.connectOpenclaw": "連線至 OpenClaw",
-
   "activity.loading": "載入活動紀錄中...",
   "activity.noActivity": "尚無活動紀錄",
   "activity.justNow": "剛剛",
   "activity.minsAgo": "{count} 分鐘前",
   "activity.hoursAgo": "{count} 小時前",
-
   "deliverables.loading": "載入交付物中...",
   "deliverables.noDeliverables": "尚無交付物",
   "deliverables.previewInBrowser": "在瀏覽器中預覽",
@@ -135,7 +126,6 @@
   "deliverables.pathForbidden": "無法開啟此位置：\n{path}\n\n路徑不在允許的目錄範圍內。",
   "deliverables.copiedToClipboard": "無法開啟 Finder，路徑已複製到剪貼簿：\n{path}",
   "deliverables.filePath": "檔案路徑：\n{path}",
-
   "sessions.loading": "載入工作階段中...",
   "sessions.noSessions": "尚無子代理工作階段",
   "sessions.subAgent": "子代理",
@@ -146,18 +136,15 @@
   "sessions.markComplete": "標記為完成",
   "sessions.deleteSession": "刪除工作階段",
   "sessions.deleteConfirm": "確定刪除此子代理工作階段？",
-
   "feed.title": "即時動態",
   "feed.all": "全部",
   "feed.tasks": "任務",
   "feed.agents": "代理",
   "feed.noEvents": "尚無事件",
-
   "debug.title": "除錯",
   "debug.events": "除錯事件",
   "debug.clear": "清除",
   "debug.waiting": "等待事件中...",
-
   "settings.title": "設定",
   "settings.resetToDefaults": "重設為預設值",
   "settings.saveChanges": "儲存變更",
@@ -182,9 +169,7 @@
   "settings.languageDesc": "選擇 Mission Control 的顯示語言。",
   "settings.langEn": "English",
   "settings.langZhTW": "繁體中文",
-
   "task.tab.runner": "執行",
-
   "runner.cliType": "CLI 類型",
   "runner.projectDir": "專案目錄",
   "runner.prompt": "提示詞",
@@ -194,7 +179,6 @@
   "runner.cancel": "取消",
   "runner.waitingOutput": "等待輸出...",
   "runner.history": "執行紀錄",
-
   "discord.title": "Discord 整合",
   "discord.channelId": "頻道 ID",
   "discord.channelName": "頻道名稱",
@@ -243,9 +227,46 @@
   "adding": "新增中...",
   "cancel": "取消",
   "remove": "移除",
-
   "workspace.notFound": "找不到工作區",
   "workspace.notFoundDesc": "工作區「{slug}」不存在。",
   "workspace.backToDashboard": "返回儀表板",
-  "workspace.loadingSlug": "載入 {slug} 中..."
+  "workspace.loadingSlug": "載入 {slug} 中...",
+  "discord.notificationLanguage": "通知語言",
+  "discord.notificationLanguageDesc": "選擇 Discord 通知卡片的顯示語言。",
+  "embed.title.task_created": "📋 任務已建立",
+  "embed.title.task_status_changed": "🔄 任務狀態已變更",
+  "embed.title.run_started": "▶️ 執行已開始",
+  "embed.title.run_completed": "✅ 執行已完成",
+  "embed.title.run_failed": "❌ 執行失敗",
+  "embed.title.deliverable_added": "📦 交付物已新增",
+  "embed.field.description": "描述",
+  "embed.field.priority": "優先級",
+  "embed.field.status": "狀態",
+  "embed.field.taskId": "任務 ID",
+  "embed.field.cli": "CLI 類型",
+  "embed.field.error": "錯誤",
+  "embed.field.type": "類型",
+  "embed.field.path": "路徑",
+  "embed.desc.task_created": "新任務已建立",
+  "embed.desc.task_status_changed": "任務狀態已更新",
+  "embed.desc.run_started": "任務執行已啟動",
+  "embed.desc.run_completed": "執行已成功完成",
+  "embed.desc.run_failed": "執行失敗",
+  "embed.desc.deliverable_added": "新交付物已新增",
+  "embed.priority.low": "低",
+  "embed.priority.normal": "一般",
+  "embed.priority.high": "高",
+  "embed.priority.urgent": "緊急",
+  "embed.status.inbox": "收件匣",
+  "embed.status.planning": "規劃中",
+  "embed.status.assigned": "已指派",
+  "embed.status.in_progress": "進行中",
+  "embed.status.testing": "測試中",
+  "embed.status.review": "審核中",
+  "embed.status.done": "完成",
+  "embed.test.title": "🧪 測試通知",
+  "embed.test.description": "這是一則來自 Mission Control 的測試通知",
+  "embed.test.workspaceId": "工作區 ID",
+  "embed.test.status": "狀態",
+  "embed.test.statusValue": "測試成功"
 }
