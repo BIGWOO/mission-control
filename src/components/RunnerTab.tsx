@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { Play, Square, Clock, Terminal, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Play, Clock, Terminal, CheckCircle, XCircle, AlertCircle, ExternalLink, Copy, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 import type { TaskRun, CliType, RunStatus } from '@/lib/types';
 
@@ -11,12 +11,11 @@ interface RunnerTabProps {
   workspaceId?: string;
 }
 
-const MAX_DISPLAY_LINES = 500;
-
 function StatusBadge({ status }: { status: RunStatus }) {
   const colors: Record<RunStatus, string> = {
     pending: 'text-yellow-400',
     running: 'text-blue-400',
+    launched: 'text-purple-400',
     completed: 'text-green-400',
     failed: 'text-red-400',
     cancelled: 'text-gray-400',
@@ -24,6 +23,7 @@ function StatusBadge({ status }: { status: RunStatus }) {
   const icons: Record<RunStatus, React.ReactNode> = {
     pending: <Clock className="w-3 h-3" />,
     running: <Terminal className="w-3 h-3 animate-pulse" />,
+    launched: <ExternalLink className="w-3 h-3" />,
     completed: <CheckCircle className="w-3 h-3" />,
     failed: <XCircle className="w-3 h-3" />,
     cancelled: <AlertCircle className="w-3 h-3" />,
@@ -32,7 +32,7 @@ function StatusBadge({ status }: { status: RunStatus }) {
   return (
     <span className={`flex items-center gap-1 text-xs ${colors[status]}`}>
       {icons[status]}
-      {status.toUpperCase()}
+      {status === 'launched' ? 'iTerm2' : status.toUpperCase()}
     </span>
   );
 }
@@ -44,11 +44,8 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
   const [prompt, setPrompt] = useState(taskDescription || '');
   const [isStarting, setIsStarting] = useState(false);
   const [activeRun, setActiveRun] = useState<TaskRun | null>(null);
-  const [liveOutput, setLiveOutput] = useState('');
   const [runs, setRuns] = useState<TaskRun[]>([]);
-  const [selectedRunOutput, setSelectedRunOutput] = useState<string | null>(null);
-  const outputRef = useRef<HTMLPreElement>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
+  const [promptCopied, setPromptCopied] = useState(false);
 
   // Load workspace defaults
   useEffect(() => {
@@ -70,8 +67,8 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
       .then(data => {
         if (Array.isArray(data)) {
           setRuns(data);
-          const active = data.find((r: TaskRun) => r.status === 'running' || r.status === 'pending');
-          if (active) setActiveRun(active);
+          const active = data.find((r: TaskRun) => r.status === 'running' || r.status === 'pending' || r.status === 'launched');
+          setActiveRun(active || null);
         }
       })
       .catch(() => {});
@@ -81,27 +78,15 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
     loadRuns();
   }, [loadRuns]);
 
-  // SSE for live output
+  // Listen for SSE status changes
   useEffect(() => {
     if (!activeRun) return;
 
     const es = new EventSource('/api/events/stream');
-    eventSourceRef.current = es;
 
     es.onmessage = (event) => {
       try {
         const sseEvent = JSON.parse(event.data);
-        if (sseEvent.type === 'run_output' && sseEvent.payload?.runId === activeRun.id) {
-          setLiveOutput(prev => {
-            const updated = prev + sseEvent.payload.output;
-            // Keep only last MAX_DISPLAY_LINES lines
-            const lines = updated.split('\n');
-            if (lines.length > MAX_DISPLAY_LINES) {
-              return lines.slice(-MAX_DISPLAY_LINES).join('\n');
-            }
-            return updated;
-          });
-        }
         if (sseEvent.type === 'run_status_changed' && sseEvent.payload?.runId === activeRun.id) {
           const newStatus = sseEvent.payload.status;
           if (newStatus === 'completed' || newStatus === 'failed' || newStatus === 'cancelled') {
@@ -112,23 +97,13 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
       } catch {}
     };
 
-    return () => {
-      es.close();
-      eventSourceRef.current = null;
-    };
+    return () => { es.close(); };
   }, [activeRun, loadRuns]);
-
-  // Auto-scroll output
-  useEffect(() => {
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
-  }, [liveOutput]);
 
   const handleStart = async () => {
     if (!prompt.trim()) return;
     setIsStarting(true);
-    setLiveOutput('');
+    setPromptCopied(false);
 
     try {
       const res = await fetch(`/api/tasks/${taskId}/run`, {
@@ -139,16 +114,39 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
 
       if (res.ok) {
         const run = await res.json();
-        setActiveRun(run);
+        if (run.status === 'failed') {
+          alert(run.error || 'Failed to launch');
+          loadRuns();
+        } else {
+          setActiveRun(run);
+          if (run.status === 'launched') {
+            setPromptCopied(true);
+          }
+        }
       } else {
         const err = await res.json();
         alert(err.error || 'Failed to start run');
       }
-    } catch (e) {
+    } catch {
       alert('Failed to start run');
     } finally {
       setIsStarting(false);
     }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!activeRun) return;
+    try {
+      const res = await fetch(`/api/tasks/${taskId}/run`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'complete' }),
+      });
+      if (res.ok) {
+        setActiveRun(null);
+        loadRuns();
+      }
+    } catch {}
   };
 
   const handleCancel = async () => {
@@ -190,6 +188,9 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
 
           <div>
             <label className="block text-xs font-medium mb-1 text-mc-text-secondary">{t('runner.prompt')}</label>
+            <p className="text-xs text-mc-text-secondary mb-1 opacity-70">
+              {t('runner.promptHint')}
+            </p>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -210,31 +211,46 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
         </div>
       )}
 
-      {/* Active run output */}
-      {activeRun && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <StatusBadge status={activeRun.status as RunStatus} />
-              <span className="text-xs text-mc-text-secondary">
-                {activeRun.cli_type === 'claude' ? 'Claude Code' : 'Codex'} • PID: {activeRun.pid || '…'}
-              </span>
-            </div>
+      {/* Active launched run */}
+      {activeRun && activeRun.status === 'launched' && (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <StatusBadge status={activeRun.status} />
+            <span className="text-xs text-mc-text-secondary">
+              {activeRun.cli_type === 'claude' ? 'Claude Code' : 'Codex'}
+            </span>
+          </div>
+
+          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 space-y-2">
+            <p className="text-sm text-purple-300 font-medium">
+              {t('runner.launched')}
+            </p>
+            <p className="text-xs text-mc-text-secondary">
+              {t('runner.launchedHint')}
+            </p>
+            {promptCopied && (
+              <p className="text-xs text-green-400 flex items-center gap-1">
+                <Copy className="w-3 h-3" />
+                {t('runner.promptCopied')}
+              </p>
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleMarkComplete}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-500 text-white rounded"
+            >
+              <Check className="w-3 h-3" />
+              {t('runner.markComplete')}
+            </button>
             <button
               onClick={handleCancel}
-              className="flex items-center gap-1 px-3 py-1 text-xs text-mc-accent-red hover:bg-mc-accent-red/10 rounded"
+              className="flex items-center gap-1 px-3 py-1.5 text-xs text-mc-accent-red hover:bg-mc-accent-red/10 rounded border border-mc-accent-red/30"
             >
-              <Square className="w-3 h-3" />
               {t('runner.cancel')}
             </button>
           </div>
-
-          <pre
-            ref={outputRef}
-            className="bg-black text-green-400 font-mono text-xs p-3 rounded max-h-64 overflow-y-auto whitespace-pre-wrap"
-          >
-            {liveOutput || t('runner.waitingOutput')}
-          </pre>
         </div>
       )}
 
@@ -246,8 +262,7 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
             {runs.map((run) => (
               <div
                 key={run.id}
-                className="flex items-center justify-between p-2 bg-mc-bg rounded border border-mc-border text-xs cursor-pointer hover:border-mc-accent/50"
-                onClick={() => setSelectedRunOutput(selectedRunOutput === run.id ? null : run.id)}
+                className="flex items-center justify-between p-2 bg-mc-bg rounded border border-mc-border text-xs"
               >
                 <div className="flex items-center gap-2">
                   <StatusBadge status={run.status} />
@@ -264,21 +279,6 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
               </div>
             ))}
           </div>
-
-          {/* Expanded output for selected run */}
-          {selectedRunOutput && (() => {
-            const run = runs.find(r => r.id === selectedRunOutput);
-            if (!run?.output) return null;
-            const lines = run.output.split('\n');
-            const display = lines.length > MAX_DISPLAY_LINES
-              ? lines.slice(-MAX_DISPLAY_LINES).join('\n')
-              : run.output;
-            return (
-              <pre className="mt-2 bg-black text-green-400 font-mono text-xs p-3 rounded max-h-48 overflow-y-auto whitespace-pre-wrap">
-                {display}
-              </pre>
-            );
-          })()}
         </div>
       )}
     </div>

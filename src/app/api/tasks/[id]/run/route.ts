@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { startRun, cancelRun, getActiveRunForTask, RunValidationError } from '@/lib/runner';
+import { startRun, cancelRun, getActiveRunForTask, markRunComplete, RunValidationError } from '@/lib/runner';
 import { getDb } from '@/lib/db';
 import { requireLocalhost } from '@/lib/auth';
 
@@ -44,7 +44,7 @@ export async function POST(
       project_dir,
     });
 
-    return NextResponse.json(run, { status: 201 });
+    return NextResponse.json({ ...run, launched: run.status === 'launched' }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to start run';
     console.error('Failed to start run:', error);
@@ -53,6 +53,36 @@ export async function POST(
       return NextResponse.json({ error: message }, { status: 422 });
     }
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+// PATCH /api/tasks/[id]/run - Mark launched run as complete
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const authError = requireLocalhost(request);
+  if (authError) return authError;
+
+  const { id } = await params;
+
+  try {
+    const body = await request.json();
+    if (body.action === 'complete') {
+      const activeRun = getActiveRunForTask(id);
+      if (!activeRun || activeRun.status !== 'launched') {
+        return NextResponse.json({ error: 'No launched run for this task' }, { status: 404 });
+      }
+      const success = markRunComplete(activeRun.id);
+      if (success) {
+        return NextResponse.json({ success: true, runId: activeRun.id });
+      }
+      return NextResponse.json({ error: 'Failed to mark complete' }, { status: 500 });
+    }
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+  } catch (error) {
+    console.error('Failed to update run:', error);
+    return NextResponse.json({ error: 'Failed to update run' }, { status: 500 });
   }
 }
 

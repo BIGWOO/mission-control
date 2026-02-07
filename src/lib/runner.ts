@@ -1,9 +1,9 @@
 /**
  * Task Runner Engine
- * Spawns Claude Code CLI or Codex CLI processes and streams output via SSE
+ * Launches Claude Code CLI or Codex CLI in iTerm2 tabs for interactive use
  */
 
-import { spawn, execSync, ChildProcess } from 'child_process';
+import { execSync } from 'child_process';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs';
@@ -11,36 +11,18 @@ import { getDb } from './db';
 import { broadcast } from './events';
 import type { CliType, RunStatus, TaskRun, Task } from './types';
 
-const MAX_CONCURRENT = 2;
+// Allowed project directories (whitelist). Paths must start with one of these prefixes.
+const ALLOWED_PROJECT_DIRS = [
+  '/Users/bigwoo/repos/',
+  '/Users/bigwoo/.openclaw/',
+  '/tmp/',
+];
 
-// Track active processes
-const activeProcesses = new Map<string, ChildProcess>();
-
-// CLI paths (resolved once)
-let claudePath = '';
-let codexPath = '';
-
-function getCliPath(cli: CliType): string {
-  if (cli === 'claude') {
-    if (claudePath === '') {
-      try {
-        const result = execSync('which claude', { encoding: 'utf-8' }).trim();
-        claudePath = result || '/Users/bigwoo/.local/bin/claude';
-      } catch {
-        claudePath = '/Users/bigwoo/.local/bin/claude';
-      }
-    }
-    return claudePath;
-  } else {
-    if (codexPath === '') {
-      try {
-        const result = execSync('which codex', { encoding: 'utf-8' }).trim();
-        codexPath = result || '/usr/local/bin/codex';
-      } catch {
-        codexPath = '/usr/local/bin/codex';
-      }
-    }
-    return codexPath;
+/** Thrown for client-side validation errors (should map to 4xx) */
+export class RunValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RunValidationError';
   }
 }
 
@@ -70,41 +52,34 @@ function updateRun(runId: string, fields: Partial<TaskRun>): void {
   }
 }
 
-function getRunningCount(): number {
-  const db = getDb();
-  const row = db.prepare("SELECT COUNT(*) as count FROM task_runs WHERE status = 'running'").get() as { count: number };
-  return row.count;
+function escapeAppleScript(str: string): string {
+  // Escape backslashes first, then double quotes
+  return str.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
-// Allowed project directories (whitelist). Paths must start with one of these prefixes.
-const ALLOWED_PROJECT_DIRS = [
-  '/Users/bigwoo/repos/',
-  '/Users/bigwoo/.openclaw/',
-  '/tmp/',
-];
+function shellEscape(s: string): string {
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
 
-/** Thrown for client-side validation errors (should map to 4xx) */
-export class RunValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'RunValidationError';
+function copyToClipboard(text: string): void {
+  try {
+    execSync('pbcopy', { input: text, encoding: 'utf-8' });
+  } catch {
+    // Silently fail if pbcopy is unavailable
   }
 }
 
-export interface StartRunOptions {
-  cli_type: CliType;
-  prompt: string;
-  project_dir?: string;
-}
+function launchInITerm2(taskId: string, options: StartRunOptions): TaskRun {
+  const db = getDb();
+  const runId = randomUUID();
+  const now = new Date().toISOString();
 
-export function startRun(taskId: string, options: StartRunOptions): TaskRun {
   // Validate project_dir
   if (options.project_dir) {
     const resolved = path.resolve(options.project_dir);
     if (!fs.existsSync(resolved)) {
       throw new RunValidationError('project_dir does not exist');
     }
-    // Resolve symlinks to prevent escape from allowed directories
     const dir = fs.realpathSync(resolved);
     if (!ALLOWED_PROJECT_DIRS.some(prefix => dir.startsWith(prefix))) {
       throw new RunValidationError(`project_dir must be under an allowed directory: ${ALLOWED_PROJECT_DIRS.join(', ')}`);
@@ -114,193 +89,134 @@ export function startRun(taskId: string, options: StartRunOptions): TaskRun {
     }
   }
 
-  const db = getDb();
-  const runId = randomUUID();
-  const now = new Date().toISOString();
-
-  // Atomic check + insert inside a transaction to prevent race conditions
+  // Atomic check + insert inside a transaction
   const insertRun = db.transaction(() => {
-    // Check concurrency limit inside transaction (include pending + running)
-    const row = db.prepare("SELECT COUNT(*) as count FROM task_runs WHERE status IN ('pending', 'running')").get() as { count: number };
-    if (row.count >= MAX_CONCURRENT) {
-      throw new RunValidationError(`Maximum concurrent runs (${MAX_CONCURRENT}) reached. Cancel a running task first.`);
-    }
-
     // Check no active run for this task
     const activeRun = db.prepare(
-      "SELECT id FROM task_runs WHERE task_id = ? AND status IN ('pending', 'running') LIMIT 1"
+      "SELECT id FROM task_runs WHERE task_id = ? AND status IN ('pending', 'running', 'launched') LIMIT 1"
     ).get(taskId);
     if (activeRun) {
       throw new RunValidationError('Task already has an active run');
     }
 
-    // Insert run record
+    // Insert run record as launched
     db.prepare(`
-      INSERT INTO task_runs (id, task_id, cli_type, status, prompt, project_dir, created_at)
-      VALUES (?, ?, ?, 'pending', ?, ?, ?)
-    `).run(runId, taskId, options.cli_type, options.prompt, options.project_dir || null, now);
+      INSERT INTO task_runs (id, task_id, cli_type, status, prompt, project_dir, started_at, created_at)
+      VALUES (?, ?, ?, 'launched', ?, ?, ?, ?)
+    `).run(runId, taskId, options.cli_type, options.prompt, options.project_dir || null, now, now);
   });
 
   insertRun();
 
-  const cliPath = getCliPath(options.cli_type);
+  // Build the command
+  const cliCommand = options.cli_type === 'claude' ? 'claude' : 'codex';
+  const projectDir = options.project_dir || '/Users/bigwoo/repos';
+  const tabName = escapeAppleScript(`MC: ${options.prompt.substring(0, 50)}`);
 
-  // Build command args
-  let args: string[];
-  if (options.cli_type === 'claude') {
-    args = ['-p', options.prompt, '--output-format', 'stream-json'];
-  } else {
-    args = ['exec', options.prompt];
+  // Copy prompt to clipboard if provided
+  if (options.prompt) {
+    copyToClipboard(options.prompt);
   }
 
-  const cwd = options.project_dir || process.cwd();
+  // Build AppleScript
+  const script = `
+tell application "iTerm2"
+  activate
+  tell current window
+    create tab with default profile
+    tell current session
+      set name to "${tabName}"
+      write text "cd ${escapeAppleScript(shellEscape(projectDir))} && ${cliCommand}"
+    end tell
+  end tell
+end tell
+`;
 
-  // Spawn process
-  const child = spawn(cliPath, args, {
-    cwd,
-    env: {
-      ...process.env,
-      PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin',
-    },
-    stdio: ['pipe', 'pipe', 'pipe'],
-  });
+  try {
+    // Use a temp file approach to avoid shell escaping issues
+    const tmpFile = `/tmp/mc-iterm-${runId}.scpt`;
+    fs.writeFileSync(tmpFile, script, 'utf-8');
+    try {
+      execSync(`osascript ${tmpFile}`, { timeout: 10000 });
+    } finally {
+      try { fs.unlinkSync(tmpFile); } catch {}
+    }
+  } catch (err) {
+    // Update run as failed if AppleScript fails
+    updateRun(runId, {
+      status: 'failed',
+      error: err instanceof Error ? err.message : 'Failed to launch iTerm2',
+      completed_at: new Date().toISOString(),
+    } as Partial<TaskRun>);
 
-  activeProcesses.set(runId, child);
+    broadcast({
+      type: 'run_status_changed',
+      payload: { runId, taskId, status: 'failed' as RunStatus, error: 'Failed to launch iTerm2' },
+    });
 
-  // Update status to running
-  updateRun(runId, {
-    status: 'running',
-    pid: child.pid,
-    started_at: new Date().toISOString(),
-  } as Partial<TaskRun>);
+    // Re-throw so the API route returns 500
+    throw new Error(err instanceof Error ? err.message : 'Failed to launch iTerm2');
+  }
 
   // Auto-update task status to in_progress
   updateTaskStatus(taskId, 'in_progress');
 
   broadcast({
     type: 'run_status_changed',
-    payload: { runId, taskId, status: 'running' as RunStatus },
+    payload: { runId, taskId, status: 'launched' as RunStatus },
   });
 
-  const MAX_OUTPUT_SIZE = 5 * 1024 * 1024; // 5MB
-  let fullOutput = '';
-
-  const handleData = (chunk: Buffer) => {
-    const text = chunk.toString();
-    fullOutput += text;
-    if (fullOutput.length > MAX_OUTPUT_SIZE) {
-      fullOutput = '... (truncated) ...\n' + fullOutput.slice(-MAX_OUTPUT_SIZE);
-    }
-
-    broadcast({
-      type: 'run_output',
-      payload: { runId, taskId, output: text },
-    });
-  };
-
-  child.stdout?.on('data', handleData);
-  child.stderr?.on('data', handleData);
-
-  child.on('close', (code) => {
-    activeProcesses.delete(runId);
-
-    // Check if already cancelled (don't overwrite)
-    const currentRun = db.prepare('SELECT status FROM task_runs WHERE id = ?').get(runId) as { status: string } | undefined;
-    if (currentRun?.status === 'cancelled') return;
-
-    const finalStatus: RunStatus = code === 0 ? 'completed' : 'failed';
-    const completedAt = new Date().toISOString();
-
-    updateRun(runId, {
-      status: finalStatus,
-      exit_code: code ?? undefined,
-      output: fullOutput,
-      completed_at: completedAt,
-    } as Partial<TaskRun>);
-
-    // Auto-update task status: completed → review, failed → testing
-    if (finalStatus === 'completed') {
-      updateTaskStatus(taskId, 'review');
-    } else if (finalStatus === 'failed') {
-      updateTaskStatus(taskId, 'testing');
-    }
-
-    broadcast({
-      type: 'run_status_changed',
-      payload: { runId, taskId, status: finalStatus, exit_code: code ?? undefined },
-    });
-  });
-
-  child.on('error', (err) => {
-    activeProcesses.delete(runId);
-
-    updateRun(runId, {
-      status: 'failed',
-      error: err.message,
-      output: fullOutput,
-      completed_at: new Date().toISOString(),
-    } as Partial<TaskRun>);
-
-    // Auto-update task status to testing on failure
-    updateTaskStatus(taskId, 'testing');
-
-    broadcast({
-      type: 'run_status_changed',
-      payload: { runId, taskId, status: 'failed' as RunStatus, error: err.message },
-    });
-  });
-
-  // Return the created run
   return db.prepare('SELECT * FROM task_runs WHERE id = ?').get(runId) as TaskRun;
 }
 
+export interface StartRunOptions {
+  cli_type: CliType;
+  prompt: string;
+  project_dir?: string;
+}
+
+export function startRun(taskId: string, options: StartRunOptions): TaskRun {
+  return launchInITerm2(taskId, options);
+}
+
 export function cancelRun(runId: string): boolean {
-  const child = activeProcesses.get(runId);
-  if (child) {
-    // Mark as cancelled in DB first
-    updateRun(runId, {
-      status: 'cancelled',
-      completed_at: new Date().toISOString(),
-    } as Partial<TaskRun>);
-
-    // Kill process (close handler will check cancelled status and skip)
-    child.kill('SIGTERM');
-    setTimeout(() => {
-      if (activeProcesses.has(runId)) {
-        child.kill('SIGKILL');
-        activeProcesses.delete(runId);
-      }
-    }, 5000);
-
-    // Broadcast
-    const db = getDb();
-    const run = db.prepare('SELECT * FROM task_runs WHERE id = ?').get(runId) as TaskRun | undefined;
-    if (run) {
-      broadcast({
-        type: 'run_status_changed',
-        payload: { runId, taskId: run.task_id, status: 'cancelled' as RunStatus },
-      });
-    }
-
-    return true;
-  }
-
-  // Process not in memory but might be in DB as running
   const db = getDb();
-  const run = db.prepare("SELECT * FROM task_runs WHERE id = ? AND status = 'running'").get(runId) as TaskRun | undefined;
-  if (run) {
-    updateRun(runId, {
-      status: 'cancelled',
-      completed_at: new Date().toISOString(),
-    } as Partial<TaskRun>);
+  return db.transaction(() => {
+    const run = db.prepare("SELECT * FROM task_runs WHERE id = ? AND status IN ('running', 'launched', 'pending')").get(runId) as TaskRun | undefined;
+    if (!run) return false;
+
+    db.prepare("UPDATE task_runs SET status = 'cancelled', completed_at = ? WHERE id = ? AND status IN ('running', 'launched', 'pending')").run(new Date().toISOString(), runId);
+
     broadcast({
       type: 'run_status_changed',
       payload: { runId, taskId: run.task_id, status: 'cancelled' as RunStatus },
     });
-    return true;
-  }
 
-  return false;
+    return true;
+  })();
+}
+
+export function markRunComplete(runId: string): boolean {
+  const db = getDb();
+  const result = db.transaction(() => {
+    const run = db.prepare("SELECT * FROM task_runs WHERE id = ? AND status = 'launched'").get(runId) as TaskRun | undefined;
+    if (!run) return null;
+
+    db.prepare("UPDATE task_runs SET status = 'completed', completed_at = ? WHERE id = ? AND status = 'launched'").run(new Date().toISOString(), runId);
+
+    return run;
+  })();
+
+  if (!result) return false;
+
+  updateTaskStatus(result.task_id, 'review');
+
+  broadcast({
+    type: 'run_status_changed',
+    payload: { runId, taskId: result.task_id, status: 'completed' as RunStatus },
+  });
+
+  return true;
 }
 
 export function getRunStatus(runId: string): TaskRun | null {
@@ -315,5 +231,5 @@ export function getTaskRuns(taskId: string): TaskRun[] {
 
 export function getActiveRunForTask(taskId: string): TaskRun | null {
   const db = getDb();
-  return (db.prepare("SELECT * FROM task_runs WHERE task_id = ? AND status IN ('pending', 'running') ORDER BY created_at DESC LIMIT 1").get(taskId) as TaskRun) || null;
+  return (db.prepare("SELECT * FROM task_runs WHERE task_id = ? AND status IN ('pending', 'running', 'launched') ORDER BY created_at DESC LIMIT 1").get(taskId) as TaskRun) || null;
 }

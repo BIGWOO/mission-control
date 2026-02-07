@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS task_runs (
   id TEXT PRIMARY KEY,
   task_id TEXT NOT NULL REFERENCES tasks(id),
   cli_type TEXT NOT NULL CHECK (cli_type IN ('claude', 'codex')),
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'launched', 'completed', 'failed', 'cancelled')),
   pid INTEGER,
   exit_code INTEGER,
   output TEXT,

@@ -75,7 +75,7 @@ async function triggerDiscordNotification(event: SSEEvent): Promise<void> {
     case 'run_status_changed': {
       workspaceId = p.workspaceId;
       const status = p.status as RunStatus;
-      if (status === 'running') discordEventType = 'run_started';
+      if (status === 'running' || status === 'launched') discordEventType = 'run_started';
       else if (status === 'completed') discordEventType = 'run_completed';
       else if (status === 'failed') discordEventType = 'run_failed';
       // Try to get workspaceId from task if not in payload

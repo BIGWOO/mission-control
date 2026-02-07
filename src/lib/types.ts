@@ -221,7 +221,7 @@ export interface PlanningState {
 
 // Runner types
 export type CliType = 'claude' | 'codex';
-export type RunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+export type RunStatus = 'pending' | 'running' | 'launched' | 'completed' | 'failed' | 'cancelled';
 
 export interface TaskRun {
   id: string;

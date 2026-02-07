@@ -233,6 +233,34 @@ const migrations: Migration[] = [
         db.exec(`ALTER TABLE workspaces ADD COLUMN discord_locale TEXT DEFAULT 'zh-TW'`);
       }
     }
+  },
+  {
+    id: '008',
+    name: 'add_launched_status_to_task_runs',
+    up: (db) => {
+      console.log('[Migration 008] Rebuilding task_runs table with launched status in CHECK constraint...');
+      db.exec(`
+        CREATE TABLE task_runs_new (
+          id TEXT PRIMARY KEY,
+          task_id TEXT NOT NULL REFERENCES tasks(id),
+          cli_type TEXT NOT NULL CHECK (cli_type IN ('claude', 'codex')),
+          status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'launched', 'completed', 'failed', 'cancelled')),
+          pid INTEGER,
+          exit_code INTEGER,
+          output TEXT,
+          error TEXT,
+          project_dir TEXT,
+          prompt TEXT NOT NULL,
+          started_at TEXT,
+          completed_at TEXT,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+        INSERT INTO task_runs_new SELECT * FROM task_runs;
+        DROP TABLE task_runs;
+        ALTER TABLE task_runs_new RENAME TO task_runs;
+        CREATE INDEX IF NOT EXISTS idx_task_runs_task ON task_runs(task_id, created_at DESC);
+      `);
+    }
   }
 ];
 
