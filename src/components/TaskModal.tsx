@@ -188,8 +188,8 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              rows={3}
-              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent resize-none"
+              rows={10}
+              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent resize-y min-h-[200px]"
               placeholder={t('task.descPlaceholder')}
             />
           </div>

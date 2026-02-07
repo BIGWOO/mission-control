@@ -193,8 +193,8 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              rows={3}
-              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm resize-none"
+              rows={10}
+              className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm resize-y min-h-[200px]"
               placeholder={t('runner.promptPlaceholder')}
             />
           </div>
