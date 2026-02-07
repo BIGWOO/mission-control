@@ -7,12 +7,14 @@
 
 import { useEffect, useState } from 'react';
 import type { TaskActivity } from '@/lib/types';
+import { useTranslation } from '@/i18n';
 
 interface ActivityLogProps {
   taskId: string;
 }
 
 export function ActivityLog({ taskId }: ActivityLogProps) {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<TaskActivity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,19 +60,19 @@ export function ActivityLog({ taskId }: ActivityLogProps) {
     
     // Less than 1 minute
     if (diff < 60000) {
-      return 'just now';
+      return t('activity.justNow');
     }
     
     // Less than 1 hour
     if (diff < 3600000) {
       const mins = Math.floor(diff / 60000);
-      return `${mins} min${mins > 1 ? 's' : ''} ago`;
+      return t('activity.minsAgo', { count: mins });
     }
     
     // Less than 24 hours
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000);
-      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+      return t('activity.hoursAgo', { count: hours });
     }
     
     // More than 24 hours
@@ -85,7 +87,7 @@ export function ActivityLog({ taskId }: ActivityLogProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-mc-text-secondary">Loading activities...</div>
+        <div className="text-mc-text-secondary">{t('activity.loading')}</div>
       </div>
     );
   }
@@ -94,7 +96,7 @@ export function ActivityLog({ taskId }: ActivityLogProps) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-mc-text-secondary">
         <div className="text-4xl mb-2">📝</div>
-        <p>No activity yet</p>
+        <p>{t('activity.noActivity')}</p>
       </div>
     );
   }

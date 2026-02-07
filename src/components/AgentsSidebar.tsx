@@ -5,6 +5,7 @@ import { Plus, ChevronRight, Zap, ZapOff, Loader2 } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
 import type { Agent, AgentStatus, OpenClawSession } from '@/lib/types';
 import { AgentModal } from './AgentModal';
+import { useTranslation } from '@/i18n';
 
 type FilterTab = 'all' | 'working' | 'standby';
 
@@ -14,6 +15,7 @@ interface AgentsSidebarProps {
 
 export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
   const { agents, selectedAgent, setSelectedAgent, agentOpenClawSessions, setAgentOpenClawSession } = useMissionControl();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<FilterTab>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
@@ -116,7 +118,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-            <span className="text-sm font-medium uppercase tracking-wider">Agents</span>
+            <span className="text-sm font-medium uppercase tracking-wider">{t('sidebar.agents')}</span>
             <span className="bg-mc-bg-tertiary text-mc-text-secondary text-xs px-2 py-0.5 rounded">
               {agents.length}
             </span>
@@ -128,7 +130,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
           <div className="mb-3 px-3 py-2 bg-green-500/10 border border-green-500/20 rounded-lg">
             <div className="flex items-center gap-2 text-sm">
               <span className="text-green-400">●</span>
-              <span className="text-mc-text">Active Sub-Agents:</span>
+              <span className="text-mc-text">{t('sidebar.activeSubAgents')}</span>
               <span className="font-bold text-green-400">{activeSubAgents}</span>
             </div>
           </div>
@@ -146,7 +148,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                   : 'text-mc-text-secondary hover:bg-mc-bg-tertiary'
               }`}
             >
-              {tab}
+              {tab === 'all' ? t('common.all') : tab === 'working' ? t('sidebar.working') : t('sidebar.standby')}
             </button>
           ))}
         </div>
@@ -218,17 +220,17 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
                     {isConnecting ? (
                       <>
                         <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Connecting...</span>
+                        <span>{t('sidebar.connecting')}</span>
                       </>
                     ) : openclawSession ? (
                       <>
                         <Zap className="w-3 h-3" />
-                        <span>OpenClaw Connected</span>
+                        <span>{t('sidebar.openclawConnected')}</span>
                       </>
                     ) : (
                       <>
                         <ZapOff className="w-3 h-3" />
-                        <span>Connect to OpenClaw</span>
+                        <span>{t('sidebar.connectOpenclaw')}</span>
                       </>
                     )}
                   </button>
@@ -246,7 +248,7 @@ export function AgentsSidebar({ workspaceId }: AgentsSidebarProps) {
           className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-mc-bg-tertiary hover:bg-mc-border rounded text-sm text-mc-text-secondary hover:text-mc-text transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Add Agent
+          {t('sidebar.addAgent')}
         </button>
       </div>
 

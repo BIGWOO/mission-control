@@ -13,11 +13,13 @@ import { useMissionControl } from '@/lib/store';
 import { useSSE } from '@/hooks/useSSE';
 import { debug } from '@/lib/debug';
 import type { Task, Workspace } from '@/lib/types';
+import { useTranslation } from '@/i18n';
 
 export default function WorkspacePage() {
   const params = useParams();
   const slug = params.slug as string;
   
+  const { t } = useTranslation();
   const {
     setAgents,
     setTasks,
@@ -137,16 +139,16 @@ export default function WorkspacePage() {
       <div className="min-h-screen bg-mc-bg flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">🔍</div>
-          <h1 className="text-2xl font-bold mb-2">Workspace Not Found</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('workspace.notFound')}</h1>
           <p className="text-mc-text-secondary mb-6">
-            The workspace &ldquo;{slug}&rdquo; doesn&apos;t exist.
+            {t('workspace.notFoundDesc', { slug })}
           </p>
           <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-mc-accent text-mc-bg rounded-lg font-medium hover:bg-mc-accent/90"
           >
             <ChevronLeft className="w-4 h-4" />
-            Back to Dashboard
+            {t('workspace.backToDashboard')}
           </Link>
         </div>
       </div>
@@ -158,7 +160,7 @@ export default function WorkspacePage() {
       <div className="min-h-screen bg-mc-bg flex items-center justify-center">
         <div className="text-center">
           <div className="text-4xl mb-4 animate-pulse">🦞</div>
-          <p className="text-mc-text-secondary">Loading {slug}...</p>
+          <p className="text-mc-text-secondary">{t('workspace.loadingSlug', { slug })}</p>
         </div>
       </div>
     );

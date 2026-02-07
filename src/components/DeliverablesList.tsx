@@ -9,12 +9,14 @@ import { useEffect, useState } from 'react';
 import { FileText, Link as LinkIcon, Package, ExternalLink, Eye } from 'lucide-react';
 import { debug } from '@/lib/debug';
 import type { TaskDeliverable } from '@/lib/types';
+import { useTranslation } from '@/i18n';
 
 interface DeliverablesListProps {
   taskId: string;
 }
 
 export function DeliverablesList({ taskId }: DeliverablesListProps) {
+  const { t } = useTranslation();
   const [deliverables, setDeliverables] = useState<TaskDeliverable[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,9 +77,9 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
         debug.file('Failed to open', error);
 
         if (res.status === 404) {
-          alert(`File not found:\n${deliverable.path}\n\nThe file may have been moved or deleted.`);
+          alert(t('deliverables.fileNotFound', { path: deliverable.path }));
         } else if (res.status === 403) {
-          alert(`Cannot open this location:\n${deliverable.path}\n\nPath is outside allowed directories.`);
+          alert(t('deliverables.pathForbidden', { path: deliverable.path }));
         } else {
           throw new Error(error.error || 'Unknown error');
         }
@@ -86,9 +88,9 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
         // Fallback: copy path to clipboard
         try {
           await navigator.clipboard.writeText(deliverable.path);
-          alert(`Could not open Finder. Path copied to clipboard:\n${deliverable.path}`);
+          alert(t('deliverables.copiedToClipboard', { path: deliverable.path }));
         } catch {
-          alert(`File path:\n${deliverable.path}`);
+          alert(t('deliverables.filePath', { path: deliverable.path }));
         }
       }
     }
@@ -114,7 +116,7 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-mc-text-secondary">Loading deliverables...</div>
+        <div className="text-mc-text-secondary">{t('deliverables.loading')}</div>
       </div>
     );
   }
@@ -123,7 +125,7 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-mc-text-secondary">
         <div className="text-4xl mb-2">📦</div>
-        <p>No deliverables yet</p>
+        <p>{t('deliverables.noDeliverables')}</p>
       </div>
     );
   }
@@ -163,7 +165,7 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
                   <button
                     onClick={() => handlePreview(deliverable)}
                     className="flex-shrink-0 p-1.5 hover:bg-mc-bg-tertiary rounded text-mc-accent-cyan"
-                    title="Preview in browser"
+                    title={t('deliverables.previewInBrowser')}
                   >
                     <Eye className="w-4 h-4" />
                   </button>
@@ -173,7 +175,7 @@ export function DeliverablesList({ taskId }: DeliverablesListProps) {
                   <button
                     onClick={() => handleOpen(deliverable)}
                     className="flex-shrink-0 p-1.5 hover:bg-mc-bg-tertiary rounded text-mc-accent"
-                    title={deliverable.deliverable_type === 'url' ? 'Open URL' : 'Reveal in Finder'}
+                    title={deliverable.deliverable_type === 'url' ? t('deliverables.openUrl') : t('deliverables.revealInFinder')}
                   >
                     <ExternalLink className="w-4 h-4" />
                   </button>

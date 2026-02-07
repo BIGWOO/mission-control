@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 interface SSELogEntry {
   timestamp: Date;
@@ -22,6 +23,7 @@ function formatLogData(data: unknown): string {
 }
 
 export function SSEDebugPanel() {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<SSELogEntry[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isEnabled, setIsEnabled] = useState(false);
@@ -82,7 +84,7 @@ export function SSEDebugPanel() {
         className="flex items-center gap-2 px-3 py-2 bg-mc-bg-secondary border border-mc-border rounded-lg shadow-lg text-sm"
       >
         {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        <span className="text-mc-accent">Debug</span>
+        <span className="text-mc-accent">{t('debug.title')}</span>
         <span className="bg-mc-accent text-mc-bg px-2 py-0.5 rounded text-xs">
           {logs.length}
         </span>
@@ -91,18 +93,18 @@ export function SSEDebugPanel() {
       {isOpen && (
         <div className="absolute bottom-12 left-0 w-96 max-h-80 bg-mc-bg-secondary border border-mc-border rounded-lg shadow-xl overflow-hidden">
           <div className="p-2 border-b border-mc-border flex justify-between items-center">
-            <span className="text-sm font-medium">Debug Events</span>
+            <span className="text-sm font-medium">{t('debug.events')}</span>
             <button
               onClick={() => setLogs([])}
               className="text-xs text-mc-text-secondary hover:text-mc-text"
             >
-              Clear
+              {t('debug.clear')}
             </button>
           </div>
           <div className="overflow-y-auto max-h-64 p-2 space-y-1 font-mono text-xs">
             {logs.length === 0 ? (
               <div className="text-mc-text-secondary text-center py-4">
-                Waiting for events...
+                {t('debug.waiting')}
               </div>
             ) : (
               logs.map((log, i) => (

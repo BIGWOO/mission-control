@@ -5,11 +5,13 @@ import { ChevronRight, Clock } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
 import type { Event } from '@/lib/types';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslation } from '@/i18n';
 
 type FeedFilter = 'all' | 'tasks' | 'agents';
 
 export function LiveFeed() {
   const { events } = useMissionControl();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<FeedFilter>('all');
 
   const filteredEvents = events.filter((event) => {
@@ -69,7 +71,7 @@ export function LiveFeed() {
       <div className="p-3 border-b border-mc-border">
         <div className="flex items-center gap-2 mb-3">
           <ChevronRight className="w-4 h-4 text-mc-text-secondary" />
-          <span className="text-sm font-medium uppercase tracking-wider">Live Feed</span>
+          <span className="text-sm font-medium uppercase tracking-wider">{t('feed.title')}</span>
         </div>
 
         {/* Filter Tabs */}
@@ -84,7 +86,7 @@ export function LiveFeed() {
                   : 'text-mc-text-secondary hover:bg-mc-bg-tertiary'
               }`}
             >
-              {tab}
+              {t(`feed.${tab}`)}
             </button>
           ))}
         </div>
@@ -94,7 +96,7 @@ export function LiveFeed() {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {filteredEvents.length === 0 ? (
           <div className="text-center py-8 text-mc-text-secondary text-sm">
-            No events yet
+            {t('feed.noEvents')}
           </div>
         ) : (
           filteredEvents.map((event) => (

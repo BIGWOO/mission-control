@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bot, CheckCircle, Circle, XCircle, Trash2, Check } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 interface SessionWithAgent {
   id: string;
@@ -28,6 +29,7 @@ interface SessionsListProps {
 }
 
 export function SessionsList({ taskId }: SessionsListProps) {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<SessionWithAgent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -109,7 +111,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
   };
 
   const handleDelete = async (sessionId: string) => {
-    if (!confirm('Delete this sub-agent session?')) return;
+    if (!confirm(t('sessions.deleteConfirm'))) return;
     try {
       const res = await fetch(`/api/openclaw/sessions/${sessionId}`, {
         method: 'DELETE',
@@ -125,7 +127,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="text-mc-text-secondary">Loading sessions...</div>
+        <div className="text-mc-text-secondary">{t('sessions.loading')}</div>
       </div>
     );
   }
@@ -134,7 +136,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-mc-text-secondary">
         <div className="text-4xl mb-2">🤖</div>
-        <p>No sub-agent sessions yet</p>
+        <p>{t('sessions.noSessions')}</p>
       </div>
     );
   }
@@ -161,7 +163,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
             <div className="flex items-center gap-2 mb-1">
               {getStatusIcon(session.status)}
               <span className="font-medium text-mc-text">
-                {session.agent_name || 'Sub-Agent'}
+                {session.agent_name || t('sessions.subAgent')}
               </span>
               <span className="text-xs text-mc-text-secondary capitalize">
                 {session.status}
@@ -170,22 +172,22 @@ export function SessionsList({ taskId }: SessionsListProps) {
 
             {/* Session ID */}
             <div className="text-xs text-mc-text-secondary font-mono mb-2 truncate">
-              Session: {session.openclaw_session_id}
+              {t('sessions.session')} {session.openclaw_session_id}
             </div>
 
             {/* Duration and timestamps */}
             <div className="flex items-center gap-3 text-xs text-mc-text-secondary">
               <span>
-                Duration: {formatDuration(session.created_at, session.ended_at)}
+                {t('sessions.duration')} {formatDuration(session.created_at, session.ended_at)}
               </span>
               <span>•</span>
-              <span>Started {formatTimestamp(session.created_at)}</span>
+              <span>{t('sessions.started')} {formatTimestamp(session.created_at)}</span>
             </div>
 
             {/* Channel */}
             {session.channel && (
               <div className="mt-2 text-xs text-mc-text-secondary">
-                Channel: <span className="font-mono">{session.channel}</span>
+                {t('sessions.channel')} <span className="font-mono">{session.channel}</span>
               </div>
             )}
           </div>
@@ -196,7 +198,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
               <button
                 onClick={() => handleMarkComplete(session.openclaw_session_id)}
                 className="p-1.5 hover:bg-mc-bg-tertiary rounded text-green-500"
-                title="Mark as complete"
+                title={t('sessions.markComplete')}
               >
                 <Check className="w-4 h-4" />
               </button>
@@ -204,7 +206,7 @@ export function SessionsList({ taskId }: SessionsListProps) {
             <button
               onClick={() => handleDelete(session.openclaw_session_id)}
               className="p-1.5 hover:bg-mc-bg-tertiary rounded text-red-500"
-              title="Delete session"
+              title={t('sessions.deleteSession')}
             >
               <Trash2 className="w-4 h-4" />
             </button>

@@ -80,7 +80,7 @@ export default function SettingsPage() {
             <button
               onClick={() => router.push('/')}
               className="p-2 hover:bg-mc-bg-tertiary rounded text-mc-text-secondary"
-              title="Back to Mission Control"
+              title={t('common.back')}
             >
               {t('common.back')}
             </button>

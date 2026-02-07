@@ -217,7 +217,7 @@ export function RunnerTab({ taskId, taskDescription, workspaceId }: RunnerTabPro
             <div className="flex items-center gap-2">
               <StatusBadge status={activeRun.status as RunStatus} />
               <span className="text-xs text-mc-text-secondary">
-                {activeRun.cli_type === 'claude' ? 'Claude Code' : 'Codex'} • PID: {activeRun.pid || '...'}
+                {activeRun.cli_type === 'claude' ? 'Claude Code' : 'Codex'} • PID: {activeRun.pid || '…'}
               </span>
             </div>
             <button
