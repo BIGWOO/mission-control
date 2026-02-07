@@ -222,6 +222,17 @@ const migrations: Migration[] = [
       db.exec(`CREATE INDEX IF NOT EXISTS idx_discord_channels_workspace ON discord_channels(workspace_id)`);
       db.exec(`CREATE INDEX IF NOT EXISTS idx_notification_settings_workspace ON notification_settings(workspace_id)`);
     }
+  },
+  {
+    id: '007',
+    name: 'add_workspace_discord_locale',
+    up: (db) => {
+      console.log('[Migration 007] Adding discord_locale to workspaces...');
+      const cols = db.prepare("PRAGMA table_info(workspaces)").all() as { name: string }[];
+      if (!cols.some(col => col.name === 'discord_locale')) {
+        db.exec(`ALTER TABLE workspaces ADD COLUMN discord_locale TEXT DEFAULT 'zh-TW'`);
+      }
+    }
   }
 ];
 

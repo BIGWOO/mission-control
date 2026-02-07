@@ -36,7 +36,7 @@ export async function PATCH(
   
   try {
     const body = await request.json();
-    const { name, description, icon, discord_channel_id, default_cli, default_project_dir } = body;
+    const { name, description, icon, discord_channel_id, default_cli, default_project_dir, discord_locale } = body;
     
     const db = getDb();
     
@@ -73,6 +73,13 @@ export async function PATCH(
     if (default_project_dir !== undefined) {
       updates.push('default_project_dir = ?');
       values.push(default_project_dir);
+    }
+    if (discord_locale !== undefined) {
+      if (discord_locale !== 'en' && discord_locale !== 'zh-TW') {
+        return NextResponse.json({ error: 'Invalid discord_locale. Must be "en" or "zh-TW"' }, { status: 400 });
+      }
+      updates.push('discord_locale = ?');
+      values.push(discord_locale);
     }
     
     if (updates.length === 0) {

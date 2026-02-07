@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireLocalhost } from '@/lib/auth';
-import { getDb } from '@/lib/db';
+import { buildTestEmbed } from '@/lib/discord-notify';
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const blocked = requireLocalhost(request);
@@ -15,23 +15,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   try {
-    const testEmbed = {
-      title: '🧪 Test Notification',
-      description: 'This is a test notification from Mission Control',
-      color: 0x3498db, // blue
-      timestamp: new Date().toISOString(),
-      fields: [
-        { name: 'Workspace ID', value: id, inline: true },
-        { name: 'Status', value: 'Test successful', inline: true }
-      ]
-    };
+    const testEmbed = buildTestEmbed(id);
 
     const response = await fetch(webhook_url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        embeds: [testEmbed],
-      }),
+      body: JSON.stringify({ embeds: [testEmbed] }),
     });
 
     if (!response.ok) {

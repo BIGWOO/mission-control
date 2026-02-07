@@ -31,12 +31,35 @@ export function DiscordSettings({ workspaceId }: DiscordSettingsProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [testingWebhook, setTestingWebhook] = useState<string | null>(null);
+  const [discordLocale, setDiscordLocale] = useState<'en' | 'zh-TW'>('zh-TW');
 
-  // Load channels and notification settings
+  // Load channels, notification settings, and locale
   useEffect(() => {
     loadChannels();
     loadNotifications();
+    loadLocale();
   }, [workspaceId]);
+
+  const loadLocale = async () => {
+    try {
+      const res = await fetch(`/api/workspaces/${workspaceId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.discord_locale) setDiscordLocale(data.discord_locale);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const updateLocale = async (locale: 'en' | 'zh-TW') => {
+    setDiscordLocale(locale);
+    try {
+      await fetch(`/api/workspaces/${workspaceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ discord_locale: locale }),
+      });
+    } catch { /* ignore */ }
+  };
 
   const loadChannels = async () => {
     try {
@@ -324,6 +347,34 @@ export function DiscordSettings({ workspaceId }: DiscordSettingsProps) {
               </div>
             ))
           )}
+        </div>
+      </div>
+
+      {/* Notification Language */}
+      <div className="space-y-2">
+        <h3 className="text-md font-medium text-mc-text">{t('discord.notificationLanguage')}</h3>
+        <p className="text-sm text-mc-text-muted">{t('discord.notificationLanguageDesc')}</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => updateLocale('zh-TW')}
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+              discordLocale === 'zh-TW'
+                ? 'bg-mc-accent text-white'
+                : 'bg-mc-surface text-mc-text border border-mc-border hover:bg-mc-border'
+            }`}
+          >
+            繁體中文
+          </button>
+          <button
+            onClick={() => updateLocale('en')}
+            className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+              discordLocale === 'en'
+                ? 'bg-mc-accent text-white'
+                : 'bg-mc-surface text-mc-text border border-mc-border hover:bg-mc-border'
+            }`}
+          >
+            English
+          </button>
         </div>
       </div>
 
