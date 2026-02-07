@@ -130,7 +130,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-mc-bg-secondary border border-mc-border rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-mc-border flex-shrink-0">
           <h2 className="text-lg font-semibold">
@@ -228,7 +228,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
               >
                 {statuses.map((s) => (
                   <option key={s} value={s}>
-                    {s.replace('_', ' ').toUpperCase()}
+                    {t(`embed.status.${s}`)}
                   </option>
                 ))}
               </select>
@@ -244,7 +244,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
               >
                 {priorities.map((p) => (
                   <option key={p} value={p}>
-                    {p.toUpperCase()}
+                    {t(`embed.priority.${p}`)}
                   </option>
                 ))}
               </select>
