@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, Circle, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from '@/i18n';
 
 interface PlanningOption {
   id: string;
@@ -48,6 +49,7 @@ interface PlanningTabProps {
 }
 
 export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<PlanningState | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -164,7 +166,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader2 className="w-6 h-6 animate-spin text-mc-accent" />
-        <span className="ml-2 text-mc-text-secondary">Loading planning state...</span>
+        <span className="ml-2 text-mc-text-secondary">{t('planning.loading')}</span>
       </div>
     );
   }
@@ -175,7 +177,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
       <div className="p-4 space-y-6">
         <div className="flex items-center gap-2 text-green-400">
           <Lock className="w-5 h-5" />
-          <span className="font-medium">Planning Complete</span>
+          <span className="font-medium">{t('planning.complete')}</span>
         </div>
         
         {/* Spec Summary */}
@@ -185,7 +187,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           
           {state.spec.deliverables?.length > 0 && (
             <div className="mb-3">
-              <h4 className="text-sm font-medium mb-1">Deliverables:</h4>
+              <h4 className="text-sm font-medium mb-1">{t('planning.deliverables')}</h4>
               <ul className="list-disc list-inside text-sm text-mc-text-secondary">
                 {state.spec.deliverables.map((d, i) => (
                   <li key={i}>{d}</li>
@@ -196,7 +198,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           
           {state.spec.success_criteria?.length > 0 && (
             <div>
-              <h4 className="text-sm font-medium mb-1">Success Criteria:</h4>
+              <h4 className="text-sm font-medium mb-1">{t('planning.successCriteria')}</h4>
               <ul className="list-disc list-inside text-sm text-mc-text-secondary">
                 {state.spec.success_criteria.map((c, i) => (
                   <li key={i}>{c}</li>
@@ -209,7 +211,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
         {/* Generated Agents */}
         {state.agents && state.agents.length > 0 && (
           <div>
-            <h3 className="font-medium mb-2">Agents Created:</h3>
+            <h3 className="font-medium mb-2">{t('planning.agentsCreated')}</h3>
             <div className="space-y-2">
               {state.agents.map((agent, i) => (
                 <div key={i} className="bg-mc-bg border border-mc-border rounded-lg p-3 flex items-center gap-3">
@@ -232,10 +234,9 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
     return (
       <div className="flex flex-col items-center justify-center p-8 space-y-4">
         <div className="text-center">
-          <h3 className="text-lg font-medium mb-2">Start Planning</h3>
+          <h3 className="text-lg font-medium mb-2">{t('planning.startTitle')}</h3>
           <p className="text-mc-text-secondary text-sm max-w-md">
-            I&apos;ll ask you a few questions to understand exactly what you need. 
-            All questions are multiple choice — just click to answer.
+            {t('planning.startDesc')}
           </p>
         </div>
         
@@ -254,10 +255,10 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           {starting ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
-              Starting...
+              {t('planning.starting')}
             </>
           ) : (
-            <>📋 Start Planning</>
+            <>{t('planning.startButton')}</>
           )}
         </button>
       </div>
@@ -271,7 +272,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
       <div className="p-4 border-b border-mc-border">
         <div className="flex items-center gap-2 text-sm text-mc-text-secondary">
           <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse" />
-          <span>Planning in progress...</span>
+          <span>{t('planning.inProgress')}</span>
         </div>
       </div>
 
@@ -315,7 +316,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
                           type="text"
                           value={otherText}
                           onChange={(e) => setOtherText(e.target.value)}
-                          placeholder="Please specify..."
+                          placeholder={t('planning.pleaseSpecify')}
                           className="w-full bg-mc-bg border border-mc-border rounded px-3 py-2 text-sm focus:outline-none focus:border-mc-accent"
                           disabled={submitting}
                         />
@@ -343,10 +344,10 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
                 {submitting ? (
                   <>
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Processing...
+                    {t('planning.processing')}
                   </>
                 ) : (
-                  'Continue →'
+                  t('planning.continue')
                 )}
               </button>
             </div>
@@ -355,7 +356,7 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-mc-accent mx-auto mb-2" />
-              <p className="text-mc-text-secondary">Waiting for next question...</p>
+              <p className="text-mc-text-secondary">{t('planning.waitingNext')}</p>
             </div>
           </div>
         )}
@@ -365,12 +366,12 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
       {state?.messages && state.messages.length > 0 && (
         <details className="border-t border-mc-border">
           <summary className="p-3 text-sm text-mc-text-secondary cursor-pointer hover:bg-mc-bg-tertiary">
-            View conversation ({state.messages.length} messages)
+            {t('planning.viewConversation', { count: state.messages.length })}
           </summary>
           <div className="p-3 space-y-2 max-h-48 overflow-y-auto bg-mc-bg">
             {state.messages.map((msg, i) => (
               <div key={i} className={`text-sm ${msg.role === 'user' ? 'text-mc-accent' : 'text-mc-text-secondary'}`}>
-                <span className="font-medium">{msg.role === 'user' ? 'You' : 'Charlie'}:</span>{' '}
+                <span className="font-medium">{msg.role === 'user' ? t('planning.you') : t('planning.charlie')}:</span>{' '}
                 <span className="opacity-75">{msg.content.substring(0, 100)}...</span>
               </div>
             ))}
