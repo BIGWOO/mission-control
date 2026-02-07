@@ -105,6 +105,13 @@ export async function PATCH(
          VALUES (?, ?, ?, ?, ?)`,
         [uuidv4(), eventType, id, `Task "${existing.title}" moved to ${body.status}`, now]
       );
+
+      // Auto-record activity for status change
+      run(
+        `INSERT INTO task_activities (id, task_id, agent_id, activity_type, message, created_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [uuidv4(), id, body.updated_by_agent_id || null, 'status_changed', `${existing.status} → ${body.status}`, now]
+      );
     }
 
     // Handle assignment change
@@ -119,6 +126,13 @@ export async function PATCH(
             `INSERT INTO events (id, type, agent_id, task_id, message, created_at)
              VALUES (?, ?, ?, ?, ?, ?)`,
             [uuidv4(), 'task_assigned', body.assigned_agent_id, id, `"${existing.title}" assigned to ${agent.name}`, now]
+          );
+
+          // Auto-record activity for assignment
+          run(
+            `INSERT INTO task_activities (id, task_id, agent_id, activity_type, message, created_at)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [uuidv4(), id, body.assigned_agent_id, 'assigned', `指派給 ${agent.name}`, now]
           );
 
           // Auto-dispatch if already in assigned status or being assigned now

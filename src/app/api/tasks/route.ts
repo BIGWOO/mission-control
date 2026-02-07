@@ -124,6 +124,13 @@ export async function POST(request: NextRequest) {
       [uuidv4(), 'task_created', body.created_by_agent_id || null, id, eventMessage, now]
     );
 
+    // Auto-record activity for task creation
+    run(
+      `INSERT INTO task_activities (id, task_id, agent_id, activity_type, message, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [uuidv4(), id, body.created_by_agent_id || null, 'created', `任務已建立`, now]
+    );
+
     // Fetch created task with all joined fields
     const task = queryOne<Task>(
       `SELECT t.*,
