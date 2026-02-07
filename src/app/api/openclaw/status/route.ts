@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getOpenClawClient } from '@/lib/openclaw/client';
 
+// Force dynamic - don't try to connect during build
+export const dynamic = 'force-dynamic';
+
 // GET /api/openclaw/status - Check OpenClaw connection status
 export async function GET() {
   try {
