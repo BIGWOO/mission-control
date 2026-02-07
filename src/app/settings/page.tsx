@@ -9,6 +9,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Settings, Save, RotateCcw, Home, FolderOpen, Link as LinkIcon } from 'lucide-react';
 import { getConfig, updateConfig, resetConfig, type MissionControlConfig } from '@/lib/config';
+import { DiscordSettings } from '@/components/DiscordSettings';
+import type { Workspace } from '@/lib/types';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -16,9 +18,15 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
 
   useEffect(() => {
     setConfig(getConfig());
+    fetch('/api/workspaces').then(r => r.ok ? r.json() : []).then((ws: Workspace[]) => {
+      setWorkspaces(ws);
+      if (ws.length > 0) setSelectedWorkspaceId(ws[0].id);
+    });
   }, []);
 
   const handleSave = async () => {
@@ -202,6 +210,22 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+        </section>
+
+        {/* Discord Integration */}
+        <section className="p-6 bg-mc-card border border-mc-border rounded-lg">
+          {workspaces.length > 1 && (
+            <div className="mb-4">
+              <label className="text-sm text-mc-text-secondary block mb-1">Workspace</label>
+              <select value={selectedWorkspaceId} onChange={e => setSelectedWorkspaceId(e.target.value)}
+                className="bg-mc-bg border border-mc-border rounded px-3 py-2 text-white text-sm">
+                {workspaces.map(ws => (
+                  <option key={ws.id} value={ws.id}>{ws.icon} {ws.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          {selectedWorkspaceId && <DiscordSettings workspaceId={selectedWorkspaceId} />}
         </section>
 
         {/* Environment Variables Note */}
