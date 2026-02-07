@@ -208,14 +208,6 @@ Respond with ONLY valid JSON in this format:
       await client.connect();
     }
 
-    // Send planning request to the main session with a special marker
-    // The message will be processed by Charlie who will respond with questions
-    await client.call('chat.send', {
-      sessionKey: sessionKey,
-      message: planningPrompt,
-      idempotencyKey: `planning-start-${taskId}-${Date.now()}`,
-    });
-
     // Store the session key and initial message
     const messages = [{ role: 'user', content: planningPrompt, timestamp: Date.now() }];
     
@@ -225,25 +217,29 @@ Respond with ONLY valid JSON in this format:
       WHERE id = ?
     `).run(sessionKey, JSON.stringify(messages), taskId);
 
-    // Poll for response (give OpenClaw time to process)
-    // Use OpenClaw API to get messages
-    let response = null;
-    for (let i = 0; i < 30; i++) { // Poll for up to 30 seconds
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Get messages via OpenClaw API
-      const transcriptMessages = await getMessagesFromOpenClaw(sessionKey);
-      console.log('[Planning] API messages:', transcriptMessages.length);
-      
-      if (transcriptMessages.length > 0) {
-        // Get the last assistant message
-        const lastAssistant = [...transcriptMessages].reverse().find(m => m.role === 'assistant');
-        if (lastAssistant) {
-          response = lastAssistant.content;
-          console.log('[Planning] Found response in transcript');
-          break;
-        }
-      }
+    // Subscribe for response BEFORE sending to avoid race window
+    console.log('[Planning] Waiting for chat response via events...');
+    const responsePromise = client.waitForChatResponse(sessionKey, 120000);
+
+    // Send planning request to the main session with a special marker
+    // The message will be processed by Charlie who will respond with questions
+    try {
+      await client.call('chat.send', {
+        sessionKey: sessionKey,
+        message: planningPrompt,
+        idempotencyKey: `planning-start-${taskId}-${Date.now()}`,
+      });
+    } catch (sendError) {
+      // Cancel the listener to avoid leak
+      responsePromise.then(() => {}).catch(() => {});
+      throw sendError;
+    }
+
+    const response = await responsePromise;
+    if (response) {
+      console.log('[Planning] Got response via event-driven wait');
+    } else {
+      console.log('[Planning] No response within timeout');
     }
 
     if (response) {

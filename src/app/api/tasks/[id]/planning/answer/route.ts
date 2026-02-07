@@ -35,37 +35,6 @@ function extractJSON(text: string): object | null {
   return null;
 }
 
-// Helper to get messages from OpenClaw API
-async function getMessagesFromOpenClaw(sessionKey: string): Promise<Array<{ role: string; content: string }>> {
-  try {
-    const client = getOpenClawClient();
-    if (!client.isConnected()) {
-      await client.connect();
-    }
-    
-    const result = await client.call<{ messages: Array<{ role: string; content: Array<{ type: string; text?: string }> }> }>('chat.history', {
-      sessionKey,
-      limit: 50,
-    });
-    
-    const messages: Array<{ role: string; content: string }> = [];
-    
-    for (const msg of result.messages || []) {
-      if (msg.role === 'assistant') {
-        const textContent = msg.content?.find((c) => c.type === 'text');
-        if (textContent?.text) {
-          messages.push({ role: 'assistant', content: textContent.text });
-        }
-      }
-    }
-    
-    return messages;
-  } catch (err) {
-    console.error('[Planning] Failed to get messages from OpenClaw:', err);
-    return [];
-  }
-}
-
 // POST /api/tasks/[id]/planning/answer - Submit an answer and get next question
 export async function POST(
   request: NextRequest,
@@ -154,37 +123,32 @@ If planning is complete, respond with JSON:
       await client.connect();
     }
 
-    await client.call('chat.send', {
-      sessionKey: task.planning_session_key,
-      message: answerPrompt,
-      idempotencyKey: `planning-answer-${taskId}-${Date.now()}`,
-    });
-
     // Update messages in DB
     getDb().prepare(`
       UPDATE tasks SET planning_messages = ? WHERE id = ?
     `).run(JSON.stringify(messages), taskId);
 
-    // Poll for response via OpenClaw API
-    let response = null;
-    const initialMessages = await getMessagesFromOpenClaw(task.planning_session_key!);
-    const initialMsgCount = initialMessages.length;
-    
-    for (let i = 0; i < 30; i++) {
-      await new Promise(resolve => setTimeout(resolve, 500));
+    // Subscribe for response BEFORE sending to avoid race window
+    console.log('[Planning] Waiting for answer response via events...');
+    const responsePromise = client.waitForChatResponse(task.planning_session_key!, 120000);
 
-      const transcriptMessages = await getMessagesFromOpenClaw(task.planning_session_key!);
-      console.log('[Planning] Answer poll - API messages:', transcriptMessages.length, 'initial:', initialMsgCount);
-      
-      // Check if there's a new assistant message
-      if (transcriptMessages.length > initialMsgCount) {
-        const lastAssistant = [...transcriptMessages].reverse().find(m => m.role === 'assistant');
-        if (lastAssistant) {
-          response = lastAssistant.content;
-          console.log('[Planning] Found new response in transcript');
-          break;
-        }
-      }
+    try {
+      await client.call('chat.send', {
+        sessionKey: task.planning_session_key,
+        message: answerPrompt,
+        idempotencyKey: `planning-answer-${taskId}-${Date.now()}`,
+      });
+    } catch (sendError) {
+      // Cancel the listener to avoid leak
+      responsePromise.then(() => {}).catch(() => {});
+      throw sendError;
+    }
+
+    const response = await responsePromise;
+    if (response) {
+      console.log('[Planning] Got answer response via event-driven wait');
+    } else {
+      console.log('[Planning] No answer response within timeout');
     }
 
     if (response) {

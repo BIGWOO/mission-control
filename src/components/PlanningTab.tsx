@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircle, Circle, Lock, AlertCircle, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n';
 
@@ -57,6 +57,9 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
   const [error, setError] = useState<string | null>(null);
   const [otherText, setOtherText] = useState('');
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const cancelledRef = useRef(false);
+  const pollingRef = useRef(false);
 
   // Load planning state
   const loadState = useCallback(async () => {
@@ -79,8 +82,49 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
   }, [taskId, onSpecLocked]);
 
   useEffect(() => {
+    cancelledRef.current = false;
     loadState();
+    return () => {
+      cancelledRef.current = true;
+    };
   }, [loadState]);
+
+  // Poll GET endpoint until we get a currentQuestion or timeout
+  const pollForQuestion = useCallback(async (maxMs: number = 60000) => {
+    if (pollingRef.current) return; // already polling
+    pollingRef.current = true;
+    setPolling(true);
+    const start = Date.now();
+    const interval = 3000;
+    
+    while (Date.now() - start < maxMs) {
+      if (cancelledRef.current) break;
+      await new Promise(r => setTimeout(r, interval));
+      if (cancelledRef.current) break;
+      try {
+        const res = await fetch(`/api/tasks/${taskId}/planning`);
+        if (res.ok) {
+          const data = await res.json();
+          if (cancelledRef.current) break;
+          if (data.currentQuestion || data.isComplete) {
+            setState(data);
+            if (data.isComplete && onSpecLocked) onSpecLocked();
+            setPolling(false);
+            pollingRef.current = false;
+            return;
+          }
+        }
+      } catch {
+        // ignore, keep polling
+      }
+    }
+    // Final load even if no question found
+    if (!cancelledRef.current) {
+      await loadState();
+    }
+    setPolling(false);
+    pollingRef.current = false;
+  }, [taskId, onSpecLocked, loadState]);
 
   // Start planning session
   const startPlanning = async () => {
@@ -99,6 +143,10 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           currentQuestion: data.currentQuestion,
           isStarted: true,
         }));
+        // If no immediate question, start polling
+        if (!data.currentQuestion) {
+          pollForQuestion();
+        }
       } else {
         setError(data.error || 'Failed to start planning');
       }
@@ -151,6 +199,10 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
             currentQuestion: data.currentQuestion,
             messages: data.messages,
           }));
+          // If no immediate next question, start polling
+          if (!data.currentQuestion && !data.complete) {
+            pollForQuestion();
+          }
         }
       } else {
         setError(data.error || 'Failed to submit answer');
@@ -356,7 +408,9 @@ export function PlanningTab({ taskId, onSpecLocked }: PlanningTabProps) {
           <div className="flex items-center justify-center h-full">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-mc-accent mx-auto mb-2" />
-              <p className="text-mc-text-secondary">{t('planning.waitingNext')}</p>
+              <p className="text-mc-text-secondary">
+                {polling ? t('planning.waitingNext') + ' (polling...)' : t('planning.waitingNext')}
+              </p>
             </div>
           </div>
         )}

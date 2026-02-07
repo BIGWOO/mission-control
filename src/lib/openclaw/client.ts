@@ -30,6 +30,7 @@ export class OpenClawClient extends EventEmitter {
   constructor(private url: string = GATEWAY_URL, token: string = GATEWAY_TOKEN) {
     super();
     this.token = token;
+    this.setMaxListeners(20);
     // Prevent Node.js from throwing on unhandled 'error' events
     this.on('error', () => {});
   }
@@ -113,6 +114,11 @@ export class OpenClawClient extends EventEmitter {
           console.log('[OpenClaw] Received:', event.data);
           try {
             const data = JSON.parse(event.data as string);
+
+            // Emit raw event frames as notifications (for waitForChatResponse)
+            if (data.type === 'event' && data.event !== 'connect.challenge') {
+              this.emit('notification', { method: data.event, params: data.payload || data });
+            }
 
             // Handle challenge-response authentication (OpenClaw RequestFrame format)
             if (data.type === 'event' && data.event === 'connect.challenge') {
@@ -283,6 +289,89 @@ export class OpenClawClient extends EventEmitter {
 
   async describeNode(nodeId: string): Promise<unknown> {
     return this.call('node.describe', { node_id: nodeId });
+  }
+
+  /**
+   * Wait for a chat response by listening to WebSocket events.
+   * Resolves with the assistant's text when a final event arrives for the given sessionKey.
+   * Falls back to chat.history on timeout or if event doesn't contain the text directly.
+   */
+  waitForChatResponse(sessionKey: string, timeoutMs: number = 120000): Promise<string | null> {
+    const startTime = Date.now();
+
+    return new Promise((resolve) => {
+      let settled = false;
+
+      const settle = (value: string | null) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        this.removeListener('notification', onNotification);
+        resolve(value);
+      };
+
+      const onNotification = (data: { method?: string; params?: Record<string, unknown> }) => {
+        // Listen for chat events matching our sessionKey
+        if (data.method === 'chat' || data.method === 'event.chat') {
+          const p = data.params || {};
+          if (p.sessionKey === sessionKey && p.state === 'final') {
+            // Got final event - fetch history to get the actual response
+            this.call<{ messages: Array<{ role: string; content: Array<{ type: string; text?: string }>; timestamp?: number }> }>('chat.history', {
+              sessionKey,
+              limit: 5,
+            }).then((result) => {
+              const msgs = result.messages || [];
+              const last = [...msgs].reverse().find(m => m.role === 'assistant');
+              if (last) {
+                // Check timestamp freshness in event path too
+                const msgTimestamp = (last as { timestamp?: number }).timestamp || 0;
+                if (msgTimestamp > 0 && msgTimestamp < startTime) {
+                  // Stale response from before our request - ignore
+                  return;
+                }
+                const text = last.content?.find(c => c.type === 'text')?.text;
+                settle(text || null);
+              } else {
+                settle(null);
+              }
+            }).catch(() => {
+              settle(null);
+            });
+          }
+        }
+      };
+
+      // Subscribe BEFORE returning the promise so no events are missed
+      this.on('notification', onNotification);
+
+      const timer = setTimeout(async () => {
+        if (settled) return;
+        // Timeout: try one last fetch from history
+        try {
+          const result = await this.call<{ messages: Array<{ role: string; content: Array<{ type: string; text?: string }>; timestamp?: number }> }>('chat.history', {
+            sessionKey,
+            limit: 5,
+          });
+          const msgs = result.messages || [];
+          const last = [...msgs].reverse().find(m => m.role === 'assistant');
+          if (last) {
+            // Check if the response is newer than when we started waiting
+            const msgTimestamp = last.timestamp || 0;
+            if (msgTimestamp > 0 && msgTimestamp < startTime) {
+              // Stale response - older than our request
+              settle(null);
+              return;
+            }
+            const text = last.content?.find(c => c.type === 'text')?.text;
+            settle(text || null);
+            return;
+          }
+        } catch {
+          // ignore
+        }
+        settle(null);
+      }, timeoutMs);
+    });
   }
 
   disconnect(): void {
