@@ -126,10 +126,10 @@ export class OpenClawClient extends EventEmitter {
                   minProtocol: 3,
                   maxProtocol: 3,
                   client: {
-                    id: 'mission-control',
+                    id: 'gateway-client',
                     version: '1.0.0',
                     platform: 'node',
-                    mode: 'operator'
+                    mode: 'backend'
                   },
                   role: 'operator',
                   scopes: ['operator.read', 'operator.write'],
@@ -137,7 +137,8 @@ export class OpenClawClient extends EventEmitter {
                   commands: [],
                   permissions: {},
                   auth: {
-                    token: this.token
+                    token: this.token,
+                    password: this.token
                   }
                 }
               };
