@@ -183,6 +183,18 @@
   "settings.langEn": "English",
   "settings.langZhTW": "繁體中文",
 
+  "task.tab.runner": "Runner",
+
+  "runner.cliType": "CLI Type",
+  "runner.projectDir": "Project Directory",
+  "runner.prompt": "Prompt",
+  "runner.promptPlaceholder": "Describe what the CLI should do...",
+  "runner.start": "Run",
+  "runner.starting": "Starting...",
+  "runner.cancel": "Cancel",
+  "runner.waitingOutput": "Waiting for output...",
+  "runner.history": "Run History",
+
   "workspace.notFound": "Workspace Not Found",
   "workspace.notFoundDesc": "The workspace \"{slug}\" doesn't exist.",
   "workspace.backToDashboard": "Back to Dashboard",

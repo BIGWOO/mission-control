@@ -151,6 +151,43 @@ const migrations: Migration[] = [
         console.log('[Migration 004] Added planning_agents');
       }
     }
+  },
+  {
+    id: '005',
+    name: 'add_task_runs_and_workspace_cli_fields',
+    up: (db) => {
+      console.log('[Migration 005] Adding task_runs table and workspace CLI fields...');
+
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS task_runs (
+          id TEXT PRIMARY KEY,
+          task_id TEXT NOT NULL REFERENCES tasks(id),
+          cli_type TEXT NOT NULL CHECK (cli_type IN ('claude', 'codex')),
+          status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled')),
+          pid INTEGER,
+          exit_code INTEGER,
+          output TEXT,
+          error TEXT,
+          project_dir TEXT,
+          prompt TEXT NOT NULL,
+          started_at TEXT,
+          completed_at TEXT,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+      `);
+      db.exec(`CREATE INDEX IF NOT EXISTS idx_task_runs_task ON task_runs(task_id, created_at DESC)`);
+
+      const wsInfo = db.prepare("PRAGMA table_info(workspaces)").all() as { name: string }[];
+      if (!wsInfo.some(col => col.name === 'discord_channel_id')) {
+        db.exec(`ALTER TABLE workspaces ADD COLUMN discord_channel_id TEXT`);
+      }
+      if (!wsInfo.some(col => col.name === 'default_cli')) {
+        db.exec(`ALTER TABLE workspaces ADD COLUMN default_cli TEXT DEFAULT 'claude'`);
+      }
+      if (!wsInfo.some(col => col.name === 'default_project_dir')) {
+        db.exec(`ALTER TABLE workspaces ADD COLUMN default_project_dir TEXT`);
+      }
+    }
   }
 ];
 

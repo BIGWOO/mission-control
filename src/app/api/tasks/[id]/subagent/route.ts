@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { broadcast } from '@/lib/events';
+import { updateTaskStatus } from '@/lib/runner';
 
 /**
  * POST /api/tasks/[id]/subagent
@@ -75,6 +76,9 @@ export async function POST(
     const session = db.prepare(`
       SELECT * FROM openclaw_sessions WHERE id = ?
     `).get(sessionId);
+
+    // Auto-update task status to in_progress
+    updateTaskStatus(taskId, 'in_progress');
 
     // Broadcast agent spawned event
     broadcast({

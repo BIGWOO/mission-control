@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Save, Trash2, Activity, Package, Bot, ClipboardList, Plus } from 'lucide-react';
+import { X, Save, Trash2, Activity, Package, Bot, ClipboardList, Plus, Play } from 'lucide-react';
 import { useMissionControl } from '@/lib/store';
 import { useTranslation } from '@/i18n';
 import { ActivityLog } from './ActivityLog';
 import { DeliverablesList } from './DeliverablesList';
 import { SessionsList } from './SessionsList';
 import { PlanningTab } from './PlanningTab';
+import { RunnerTab } from './RunnerTab';
 import { AgentModal } from './AgentModal';
 import type { Task, TaskPriority, TaskStatus } from '@/lib/types';
 
-type TabType = 'overview' | 'planning' | 'activity' | 'deliverables' | 'sessions';
+type TabType = 'overview' | 'planning' | 'runner' | 'activity' | 'deliverables' | 'sessions';
 
 interface TaskModalProps {
   task?: Task;
@@ -121,6 +122,7 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
   const tabs = [
     { id: 'overview' as TabType, label: t('task.tab.overview'), icon: null },
     { id: 'planning' as TabType, label: t('task.tab.planning'), icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'runner' as TabType, label: t('task.tab.runner'), icon: <Play className="w-4 h-4" /> },
     { id: 'activity' as TabType, label: t('task.tab.activity'), icon: <Activity className="w-4 h-4" /> },
     { id: 'deliverables' as TabType, label: t('task.tab.deliverables'), icon: <Package className="w-4 h-4" /> },
     { id: 'sessions' as TabType, label: t('task.tab.sessions'), icon: <Bot className="w-4 h-4" /> },
@@ -295,6 +297,15 @@ export function TaskModal({ task, onClose, workspaceId }: TaskModalProps) {
               onSpecLocked={() => {
                 window.location.reload();
               }}
+            />
+          )}
+
+          {/* Runner Tab */}
+          {activeTab === 'runner' && task && (
+            <RunnerTab
+              taskId={task.id}
+              taskDescription={task.description}
+              workspaceId={task.workspace_id}
             />
           )}
 

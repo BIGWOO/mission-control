@@ -183,6 +183,18 @@
   "settings.langEn": "English",
   "settings.langZhTW": "繁體中文",
 
+  "task.tab.runner": "執行",
+
+  "runner.cliType": "CLI 類型",
+  "runner.projectDir": "專案目錄",
+  "runner.prompt": "提示詞",
+  "runner.promptPlaceholder": "描述 CLI 要執行的任務...",
+  "runner.start": "執行",
+  "runner.starting": "啟動中...",
+  "runner.cancel": "取消",
+  "runner.waitingOutput": "等待輸出...",
+  "runner.history": "執行紀錄",
+
   "workspace.notFound": "找不到工作區",
   "workspace.notFoundDesc": "工作區「{slug}」不存在。",
   "workspace.backToDashboard": "返回儀表板",

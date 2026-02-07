@@ -36,7 +36,7 @@ export async function PATCH(
   
   try {
     const body = await request.json();
-    const { name, description, icon } = body;
+    const { name, description, icon, discord_channel_id, default_cli, default_project_dir } = body;
     
     const db = getDb();
     
@@ -61,6 +61,18 @@ export async function PATCH(
     if (icon !== undefined) {
       updates.push('icon = ?');
       values.push(icon);
+    }
+    if (discord_channel_id !== undefined) {
+      updates.push('discord_channel_id = ?');
+      values.push(discord_channel_id);
+    }
+    if (default_cli !== undefined) {
+      updates.push('default_cli = ?');
+      values.push(default_cli);
+    }
+    if (default_project_dir !== undefined) {
+      updates.push('default_project_dir = ?');
+      values.push(default_project_dir);
     }
     
     if (updates.length === 0) {

@@ -104,6 +104,9 @@ export interface Workspace {
   slug: string;
   description?: string;
   icon: string;
+  discord_channel_id?: string;
+  default_cli?: CliType;
+  default_project_dir?: string;
   created_at: string;
   updated_at: string;
 }
@@ -216,6 +219,26 @@ export interface PlanningState {
   isLocked: boolean;
 }
 
+// Runner types
+export type CliType = 'claude' | 'codex';
+export type RunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+
+export interface TaskRun {
+  id: string;
+  task_id: string;
+  cli_type: CliType;
+  status: RunStatus;
+  pid?: number;
+  exit_code?: number;
+  output?: string;
+  error?: string;
+  project_dir?: string;
+  prompt: string;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+}
+
 // API request/response types
 export interface CreateAgentRequest {
   name: string;
@@ -292,6 +315,8 @@ export type SSEEventType =
   | 'deliverable_added'
   | 'agent_spawned'
   | 'agent_completed'
+  | 'run_output'
+  | 'run_status_changed'
   | 'ping';
 
 export interface SSEEvent {
@@ -304,5 +329,15 @@ export interface SSEEvent {
     deleted?: boolean;
   } | {
     id: string;  // For task_deleted events
+  } | {
+    runId: string;
+    taskId: string;
+    output: string;
+  } | {
+    runId: string;
+    taskId: string;
+    status: RunStatus;
+    exit_code?: number;
+    error?: string;
   };
 }
