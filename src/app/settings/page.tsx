@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Settings, Save, RotateCcw, Home, FolderOpen, Link as LinkIcon } from 'lucide-react';
+import { Settings, Save, RotateCcw, Home, FolderOpen, Link as LinkIcon, Wrench } from 'lucide-react';
 import { getConfig, updateConfig, resetConfig, type MissionControlConfig } from '@/lib/config';
 import { DiscordSettings } from '@/components/DiscordSettings';
 import { useTranslation } from '@/i18n';
@@ -22,6 +22,10 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>('');
+  const [wsProjectDir, setWsProjectDir] = useState('');
+  const [wsCli, setWsCli] = useState('claude');
+  const [wsSaving, setWsSaving] = useState(false);
+  const [wsSaved, setWsSaved] = useState(false);
 
   useEffect(() => {
     setConfig(getConfig());
@@ -30,6 +34,35 @@ export default function SettingsPage() {
       if (ws.length > 0) setSelectedWorkspaceId(ws[0].id);
     });
   }, []);
+
+  // Load selected workspace settings
+  useEffect(() => {
+    if (!selectedWorkspaceId) return;
+    const ws = workspaces.find(w => w.id === selectedWorkspaceId);
+    if (ws) {
+      setWsProjectDir(ws.default_project_dir || '');
+      setWsCli(ws.default_cli || 'claude');
+    }
+  }, [selectedWorkspaceId, workspaces]);
+
+  const handleSaveWorkspace = async () => {
+    if (!selectedWorkspaceId) return;
+    setWsSaving(true);
+    try {
+      const res = await fetch(`/api/workspaces/${selectedWorkspaceId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ default_project_dir: wsProjectDir, default_cli: wsCli }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setWorkspaces(prev => prev.map(w => w.id === selectedWorkspaceId ? { ...w, ...updated } : w));
+        setWsSaved(true);
+        setTimeout(() => setWsSaved(false), 3000);
+      }
+    } catch {}
+    setWsSaving(false);
+  };
 
   const handleSave = async () => {
     if (!config) return;
@@ -124,7 +157,80 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {/* Workspace Paths - hidden: not currently used */}
+        {/* Workspace Settings */}
+        <section className="mb-8 p-6 bg-mc-bg-secondary border border-mc-border rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Wrench className="w-5 h-5 text-mc-accent" />
+            <h2 className="text-xl font-semibold text-mc-text">{t('settings.workspacePaths')}</h2>
+          </div>
+          <p className="text-sm text-mc-text-secondary mb-4">
+            {t('settings.workspacePathsDesc')}
+          </p>
+
+          {workspaces.length > 1 && (
+            <div className="mb-4">
+              <label className="text-sm text-mc-text-secondary block mb-1">Workspace</label>
+              <select value={selectedWorkspaceId} onChange={e => setSelectedWorkspaceId(e.target.value)}
+                className="bg-mc-bg border border-mc-border rounded px-3 py-2 text-white text-sm">
+                {workspaces.map(ws => (
+                  <option key={ws.id} value={ws.id}>{ws.icon} {ws.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {workspaces.length === 1 && (
+            <p className="text-sm text-mc-text-secondary mb-4">
+              {workspaces[0].icon} {workspaces[0].name}
+            </p>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-mc-text mb-2">
+                {t('settings.defaultProjectDir')}
+              </label>
+              <input
+                type="text"
+                value={wsProjectDir}
+                onChange={(e) => setWsProjectDir(e.target.value)}
+                placeholder="/Users/bigwoo/repos/my-project"
+                className="w-full px-4 py-2 bg-mc-bg border border-mc-border rounded text-mc-text focus:border-mc-accent focus:outline-none"
+              />
+              <p className="text-xs text-mc-text-secondary mt-1">
+                {t('settings.defaultProjectDirDesc')}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-mc-text mb-2">
+                {t('settings.defaultCli')}
+              </label>
+              <select
+                value={wsCli}
+                onChange={(e) => setWsCli(e.target.value)}
+                className="px-4 py-2 bg-mc-bg border border-mc-border rounded text-mc-text focus:border-mc-accent focus:outline-none"
+              >
+                <option value="claude">Claude Code</option>
+                <option value="codex">Codex</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSaveWorkspace}
+                disabled={wsSaving}
+                className="px-4 py-2 bg-mc-accent text-mc-bg rounded hover:bg-mc-accent/90 flex items-center gap-2 disabled:opacity-50 text-sm"
+              >
+                <Save className="w-4 h-4" />
+                {wsSaving ? t('common.saving') : t('settings.saveWorkspace')}
+              </button>
+              {wsSaved && (
+                <span className="text-green-400 text-sm">{t('settings.workspaceSaved')}</span>
+              )}
+            </div>
+          </div>
+        </section>
 
         {/* API Configuration */}
         <section className="mb-8 p-6 bg-mc-bg-secondary border border-mc-border rounded-lg">
