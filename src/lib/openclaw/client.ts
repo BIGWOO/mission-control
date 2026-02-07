@@ -1,6 +1,7 @@
 // OpenClaw Gateway WebSocket Client
 
 import { EventEmitter } from 'events';
+import WebSocket from 'ws';
 import type { OpenClawMessage, OpenClawSessionInfo } from '../types';
 
 const GATEWAY_URL = process.env.OPENCLAW_GATEWAY_URL || 'ws://127.0.0.1:18789';
@@ -115,11 +116,16 @@ export class OpenClawClient extends EventEmitter {
                   minProtocol: 3,
                   maxProtocol: 3,
                   client: {
-                    id: 'gateway-client',
+                    id: 'mission-control',
                     version: '1.0.0',
-                    platform: 'web',
-                    mode: 'ui'
+                    platform: 'node',
+                    mode: 'operator'
                   },
+                  role: 'operator',
+                  scopes: ['operator.read', 'operator.write'],
+                  caps: [],
+                  commands: [],
+                  permissions: {},
                   auth: {
                     token: this.token
                   }
