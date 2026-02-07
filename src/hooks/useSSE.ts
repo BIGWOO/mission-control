@@ -47,12 +47,12 @@ export function useSSE() {
 
       eventSource.onmessage = (event) => {
         try {
-          // Skip keep-alive messages (they start with ":")
-          if (event.data.startsWith(':')) {
+          const sseEvent: SSEEvent = JSON.parse(event.data);
+
+          // Skip keep-alive ping messages
+          if (sseEvent.type === 'ping') {
             return;
           }
-
-          const sseEvent: SSEEvent = JSON.parse(event.data);
           debug.sse(`Received event: ${sseEvent.type}`, sseEvent.payload);
 
           switch (sseEvent.type) {

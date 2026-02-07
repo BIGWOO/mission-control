@@ -21,15 +21,15 @@ export async function GET(request: NextRequest) {
       const connectMsg = encoder.encode(`: connected\n\n`);
       controller.enqueue(connectMsg);
 
-      // Set up keep-alive ping every 30 seconds
+      // Set up keep-alive ping every 15 seconds
       const keepAliveInterval = setInterval(() => {
         try {
-          controller.enqueue(encoder.encode(`: keep-alive\n\n`));
+          controller.enqueue(encoder.encode(`data: {"type":"ping"}\n\n`));
         } catch (error) {
           // Client disconnected
           clearInterval(keepAliveInterval);
         }
-      }, 30000);
+      }, 15000);
 
       // Handle client disconnect
       request.signal.addEventListener('abort', () => {
